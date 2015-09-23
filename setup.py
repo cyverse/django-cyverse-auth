@@ -37,9 +37,8 @@ setup(
     author_email='atmodevs@gmail.com',
     description="Authentication support for iPlantCollaborative.",
     install_requires=requirements,
-    long_description=description,
     license="BSD License, 3 clause",
-    packages=get_packages("iplantauth"),
+    packages=find_packages(),
     url="https://github.com/iPlantCollaborativeOpenSource/django-iplant-auth",
     classifiers=[
         "Development Status :: 3 - Alpha",

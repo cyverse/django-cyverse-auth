@@ -17,7 +17,7 @@ from caslib import CASClient, SAMLClient, OAuthClient
 
 from threepio import auth_logger as logger
 
-from authentication import create_session_token
+from authentication.session import create_session_token
 from authentication.models import UserProxy
 from authentication.settings import auth_settings
 
