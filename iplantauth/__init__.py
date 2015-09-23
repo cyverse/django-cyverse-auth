@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 """
 authentication helper methods.
 """
@@ -7,6 +8,12 @@ from django.contrib.auth.signals import user_logged_in
 
 from authentication.models import Token as AuthToken, create_token
 from authentication.settings import auth_settings
+
+from collections import namedtuple
+
+version_info = namedtuple("version_info", ["major", "minor", "patch"])
+version = version_info(0, 0, 1)
+__version__ = "{0.major}.{0.minor}.{0.patch}".format(version)
 
 
 # Login Hooks here:
