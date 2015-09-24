@@ -7,7 +7,6 @@ from datetime import timedelta
 from django.conf import settings
 from django.test.signals import setting_changed
 
-
 USER_SETTINGS = getattr(settings, 'AUTHENTICATION', {})
 
 
@@ -49,6 +48,5 @@ def reload_settings(*args, **kwargs):
     if setting_name == "AUTHENTICATION":
         defaults = DEFAULTS.copy()
         auth_setings = ReadOnlyAttrDict(defaults.update(values))
-
 
 setting_changed.connect(reload_settings)

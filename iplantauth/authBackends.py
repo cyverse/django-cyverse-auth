@@ -155,13 +155,13 @@ cas_oauth_client = CAS_OAuthClient(auth_settings.CAS_SERVER,
 
 def create_user_token_from_cas_profile(profile, access_token):
     profile_dict = dict()
-    profile_dict['username'] = profile['id']
+    username = profile['id']
     for attr in profile['attributes']:
         key = attr.keys()[0]
         value = attr[key]
         profile_dict[key] = value
 
-    user = get_or_create_user(profile_dict)
+    user = get_or_create_user(username, profile_dict)
     user_token = Token.objects.create(key=access_token, user=user)
     return user_token
 
@@ -169,22 +169,6 @@ def generate_token(user):
     access_token = uuid4()
     user_token = Token.objects.create(user=user, key=str(access_token))
     return user_token
-
-
-def get_or_create_user(profile):
-    """
-    :param profile: dict - includes 'username', 'firstName','lastName', 'email' - string
-                                    'entitlement' - []
-    :return:
-    """
-    User = get_user_model()
-    user, created = User.objects.get_or_create(username=profile['username'])
-    user.first_name = profile['firstName']
-    user.last_name = profile['lastName']
-    user.email = profile['email']
-    user.is_staff = ('staff' in profile['entitlement'])
-    user.save()
-    return user
 
 
 class OAuthLoginBackend(object):
