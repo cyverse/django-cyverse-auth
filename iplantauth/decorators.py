@@ -7,8 +7,8 @@ from rest_framework import status
 
 from threepio import auth_logger as logger
 
-from authentication.protocol.cas import cas_loginRedirect
-from authentication.token import validate_token
+from iplantauth.protocol.cas import cas_loginRedirect
+from iplantauth.token import validate_token
 
 
 def atmo_login_required(func):

@@ -1,5 +1,5 @@
 """
-Atmosphere authentication models..
+iPlant authentication models..
 """
 from datetime import timedelta
 import hashlib
@@ -10,7 +10,7 @@ from django.contrib.auth import get_user_model
 from django.db import models
 from django.utils import timezone
 
-from authentication.settings import auth_settings
+from iplantauth.settings import auth_settings
 
 import logging
 logger = logging.getLogger(__name__)
@@ -59,9 +59,6 @@ class AccessToken(models.Model):
     def __unicode__(self):
         return "%s" % (self.key)
 
-    class Meta:
-        db_table = "access_token"
-        app_label = "authentication"
 
 class Token(models.Model):
 
@@ -111,9 +108,6 @@ class Token(models.Model):
     def __unicode__(self):
         return "%s" % (self.key)
 
-    class Meta:
-        db_table = "auth_token"
-        app_label = "authentication"
 
 
 class UserProxy(models.Model):
@@ -132,8 +126,6 @@ class UserProxy(models.Model):
         return "%s CAS_Proxy" % self.username
 
     class Meta:
-        db_table = "auth_userproxy"
-        app_label = "authentication"
         verbose_name_plural = 'user proxies'
 
 
@@ -168,7 +160,8 @@ def create_token(username, token_key=None, token_expire=None, issuer=None):
                     "Auth Token _NOT_ created" % username)
         return None
     auth_user_token, _ = Token.objects.get_or_create(
-        key=token_key, user=user, issuer=issuer, api_server_url=settings.API_SERVER_URL)
+        key=token_key, user=user, issuer=issuer,
+        api_server_url=settings.API_SERVER_URL)
     if token_expire:
         auth_user_token.update_expiration(token_expire)
         auth_user_token.save()

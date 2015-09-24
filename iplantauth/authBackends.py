@@ -6,11 +6,11 @@ from django.conf import settings
 
 from threepio import auth_logger as logger
 
-from authentication.models import get_or_create_user
-from authentication.models import Token
-from authentication.protocol.ldap import ldap_validate, ldap_formatAttrs
-from authentication.protocol.ldap import lookupUser as ldap_lookupUser
-from authentication.protocol.cas import cas_validateUser
+from iplantauth.models import get_or_create_user
+from iplantauth.models import Token
+from iplantauth.protocol.ldap import ldap_validate, ldap_formatAttrs
+from iplantauth.protocol.ldap import lookupUser as ldap_lookupUser
+from iplantauth.protocol.cas import cas_validateUser
 
 
 class MockLoginBackend(ModelBackend):

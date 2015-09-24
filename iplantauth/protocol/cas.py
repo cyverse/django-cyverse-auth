@@ -17,9 +17,9 @@ from caslib import CASClient, SAMLClient, OAuthClient
 
 from threepio import auth_logger as logger
 
-from authentication.session import create_session_token
-from authentication.models import UserProxy
-from authentication.settings import auth_settings
+from iplantauth.session import create_session_token
+from iplantauth.models import UserProxy
+from iplantauth.settings import auth_settings
 
 ###########################
 # CAS-SPECIFIC SSO METHODS
@@ -109,7 +109,7 @@ def cas_updateUserProxy(user, pgtIou, max_try=3):
 
 def cas_set_redirect_url(sendback, request):
     absolute_url = request.build_absolute_uri(
-        reverse('authentication:cas-service-validate-link'))
+        reverse('iplantauth:cas-service-validate-link'))
     return "%s?sendback=%s" % (absolute_url, sendback)
 
 

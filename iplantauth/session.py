@@ -5,8 +5,8 @@ session authentication
 from django.conf import settings
 from django.contrib.auth.signals import user_logged_in
 
-from authentication.models import Token as AuthToken, create_token
-from authentication.settings import auth_settings
+from iplantauth.models import Token as AuthToken, create_token
+from iplantauth.settings import auth_settings
 
 # Login Hooks here:
 def create_session_token(sender, user, request, issuer="Django-Session", **kwargs):

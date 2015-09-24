@@ -10,13 +10,13 @@ from django.utils import timezone
 from requests.exceptions import ConnectionError
 from rest_framework.authentication import BaseAuthentication
 from threepio import logger
-from authentication.exceptions import Unauthorized
-from authentication.models import Token as AuthToken,\
+from iplantauth.exceptions import Unauthorized
+from iplantauth.models import Token as AuthToken,\
      create_token
-from authentication.models import get_or_create_user
-from authentication.protocol.cas import cas_validateUser
-from authentication.protocol.cas import cas_profile_for_token
-from authentication.protocol.wso2 import WSO2_JWT
+from iplantauth.models import get_or_create_user
+from iplantauth.protocol.cas import cas_validateUser
+from iplantauth.protocol.cas import cas_profile_for_token
+from iplantauth.protocol.wso2 import WSO2_JWT
 
 User = get_user_model()
 
@@ -154,7 +154,7 @@ class OAuthTokenAuthentication(TokenAuthentication):
         auth = request.META.get('HTTP_AUTHORIZATION', '').split()
         if len(auth) == 2 and auth[0].lower() == "token":
             oauth_token = auth[1]
-            if 'authentication.authBackends.MockLoginBackend' in all_backends:
+            if 'iplantauth.authBackends.MockLoginBackend' in all_backends:
                 user, token = self._mock_oauth_login(oauth_token)
                 return (user, token)
             if validate_oauth_token(oauth_token):

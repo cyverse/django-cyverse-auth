@@ -10,7 +10,7 @@ import ldap as ldap_driver
 
 from threepio import auth_logger as logger
 
-from authentication.settings import auth_settings
+from iplantauth.settings import auth_settings
 
 
 def _search_ldap(userid, conn=None):

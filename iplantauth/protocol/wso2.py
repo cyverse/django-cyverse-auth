@@ -8,8 +8,8 @@ from urlparse import urlparse
 
 from django.contrib.auth import get_user_model
 from django.conf import settings
-from authentication.exceptions import Unauthorized
-from authentication.protocol.jwt_oauth import JWTServiceProvider
+from iplantauth.exceptions import Unauthorized
+from iplantauth.protocol.jwt_oauth import JWTServiceProvider
 from threepio import logger
 
 

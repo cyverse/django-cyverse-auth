@@ -11,12 +11,12 @@ from django.http import HttpResponse, HttpResponseRedirect
 
 from threepio import auth_logger as logger
 
-from authentication.models import create_token, userCanEmulate
-from authentication.models import Token as AuthToken
-from authentication.protocol.cas import cas_validateUser, cas_loginRedirect, get_cas_oauth_client
-from authentication.protocol.globus import globus_authorize, globus_validate_code
-from authentication.protocol.ldap import ldap_validate
-from authentication.settings import auth_settings
+from iplantauth.models import create_token, userCanEmulate
+from iplantauth.models import Token as AuthToken
+from iplantauth.protocol.cas import cas_validateUser, cas_loginRedirect, get_cas_oauth_client
+from iplantauth.protocol.globus import globus_authorize, globus_validate_code
+from iplantauth.protocol.ldap import ldap_validate
+from iplantauth.settings import auth_settings
 
 
 #GLOBUS Views
@@ -30,7 +30,7 @@ def globus_login_redirect(request):
     return globus_authorize(request)
 
 def globus_callback_authorize(request):
-    from authentication.protocol.globus import globus_validate_code
+    from iplantauth.protocol.globus import globus_validate_code
     auth_token = globus_validate_code(request)
 
     if not auth_token:
