@@ -6,6 +6,7 @@ from django.conf import settings
 from django.contrib.auth import get_user_model
 
 
+from iplantauth.settings import auth_settings
 from iplantauth.models import get_or_create_user
 from iplantauth.models import Token
 from iplantauth.protocol.ldap import ldap_validate, ldap_formatAttrs
@@ -149,7 +150,7 @@ cas_oauth_client = CAS_OAuthClient(auth_settings.CAS_SERVER,
                                    auth_settings.OAUTH_CLIENT_CALLBACK,
                                    auth_settings.OAUTH_CLIENT_KEY,
                                    auth_settings.OAUTH_CLIENT_SECRET,
-                                   auth_prefix=settings.CAS_AUTH_PREFIX)
+                                   auth_prefix=auth_settings.CAS_AUTH_PREFIX)
 
 
 def create_user_token_from_cas_profile(profile, access_token):
