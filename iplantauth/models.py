@@ -5,12 +5,12 @@ from datetime import timedelta
 import hashlib
 import uuid
 
-from django.conf import settings
+from iplantauth.settings import auth_settings
 from django.contrib.auth import get_user_model
 from django.db import models
+from django.conf import settings
 from django.utils import timezone
 
-from iplantauth.settings import auth_settings
 
 import logging
 logger = logging.getLogger(__name__)
@@ -68,7 +68,7 @@ class Token(models.Model):
     """
     key = models.CharField(max_length=1024, primary_key=True)
     user = models.ForeignKey(AUTH_USER_MODEL, related_name='auth_token')
-    api_server_url = models.CharField(max_length=256)
+    api_server_url = models.CharField(max_length=256, null=True, blank=True)
     remote_ip = models.CharField(max_length=128, null=True, blank=True)
     issuer = models.TextField(null=True, blank=True)
     issuedTime = models.DateTimeField(auto_now_add=True)
@@ -161,7 +161,7 @@ def create_token(username, token_key=None, token_expire=None, issuer=None):
         return None
     auth_user_token, _ = Token.objects.get_or_create(
         key=token_key, user=user, issuer=issuer,
-        api_server_url=settings.API_SERVER_URL)
+        api_server_url=auth_settings.API_SERVER_URL)
     if token_expire:
         auth_user_token.update_expiration(token_expire)
         auth_user_token.save()

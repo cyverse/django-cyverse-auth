@@ -24,7 +24,7 @@ class Migration(migrations.Migration):
             name='Token',
             fields=[
                 ('key', models.CharField(max_length=1024, serialize=False, primary_key=True)),
-                ('api_server_url', models.CharField(max_length=256)),
+                ('api_server_url', models.CharField(max_length=256, null=True, blank=True)),
                 ('remote_ip', models.CharField(max_length=128, null=True, blank=True)),
                 ('issuer', models.TextField(null=True, blank=True)),
                 ('issuedTime', models.DateTimeField(auto_now_add=True)),

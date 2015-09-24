@@ -15,7 +15,8 @@ from django.utils import timezone
 
 from caslib import CASClient, SAMLClient, OAuthClient
 
-from threepio import auth_logger as logger
+import logging
+logger = logging.getLogger(__name__)
 
 from iplantauth.session import create_session_token
 from iplantauth.models import UserProxy

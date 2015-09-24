@@ -9,7 +9,8 @@ from django.conf import settings
 from django.views.decorators.csrf import csrf_exempt
 from django.http import HttpResponse, HttpResponseRedirect
 
-from threepio import auth_logger as logger
+import logging
+logger = logging.getLogger(__name__)
 
 from iplantauth.models import create_token, userCanEmulate
 from iplantauth.models import Token as AuthToken

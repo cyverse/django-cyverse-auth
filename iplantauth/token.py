@@ -9,7 +9,8 @@ from django.contrib.auth import get_user_model
 from django.utils import timezone
 from requests.exceptions import ConnectionError
 from rest_framework.authentication import BaseAuthentication
-from threepio import logger
+import logging
+logger = logging.getLogger(__name__)
 from iplantauth.exceptions import Unauthorized
 from iplantauth.models import Token as AuthToken,\
      create_token

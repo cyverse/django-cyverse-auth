@@ -1,11 +1,12 @@
-from django.conf import settings
 from django.contrib.auth import authenticate, login as django_login
 from django.http import HttpResponseRedirect, HttpResponseForbidden
 
+from iplantauth.settings import auth_settings
+
 from rest_framework.response import Response
 from rest_framework import status
-
-from threepio import auth_logger as logger
+import logging
+logger = logging.getLogger(__name__)
 
 from iplantauth.protocol.cas import cas_loginRedirect
 from iplantauth.token import validate_token
@@ -17,19 +18,19 @@ def atmo_login_required(func):
             logger.debug("[NOREQUEST] User is being logged out because request"
                          " is empty")
             logger.debug("%s\n%s\n%s\n%s" % (request, args, kwargs, func))
-            return HttpResponseRedirect(settings.SERVER_URL + "/logout/")
+            return HttpResponseRedirect(auth_settings.SERVER_URL + "/logout/")
 
         if not request.session:
             logger.debug("[NOSESSION] User is being logged out because session"
                          " object does not exist in request")
             logger.debug("%s\n%s\n%s\n%s" % (request, args, kwargs, func))
-            return HttpResponseRedirect(settings.SERVER_URL + "/logout/")
+            return HttpResponseRedirect(auth_settings.SERVER_URL + "/logout/")
 
         if not request.session.get('username'):
             logger.debug("[NOUSER] User is being logged out because session"
                          " did not include a username")
             logger.debug("%s\n%s\n%s\n%s" % (request, args, kwargs, func))
-            return HttpResponseRedirect(settings.SERVER_URL + "/logout/")
+            return HttpResponseRedirect(auth_settings.SERVER_URL + "/logout/")
 
         # logger.info('atmo_login_required session info: %s'
         #             % request.session.__dict__)
@@ -50,7 +51,7 @@ def atmo_login_required(func):
                                 auth_token=token, request=request)
             # AUTHORIZED STAFF ONLY
             if not user or not user.is_staff:
-                return HttpResponseRedirect(settings.SERVER_URL + "/logout/")
+                return HttpResponseRedirect(auth_settings.SERVER_URL + "/logout/")
             logger.info("Emulate success - Logging in %s" % user.username)
             django_login(request, user)
             return func(request, *args, **kwargs)

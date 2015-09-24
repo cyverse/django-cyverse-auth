@@ -8,7 +8,8 @@ from django.core.handlers.wsgi import WSGIRequest
 
 import ldap as ldap_driver
 
-from threepio import auth_logger as logger
+import logging
+logger = logging.getLogger(__name__)
 
 from iplantauth.settings import auth_settings
 

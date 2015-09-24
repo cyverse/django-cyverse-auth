@@ -10,7 +10,8 @@ from django.contrib.auth import get_user_model
 from django.conf import settings
 from iplantauth.exceptions import Unauthorized
 from iplantauth.protocol.jwt_oauth import JWTServiceProvider
-from threepio import logger
+import logging
+logger = logging.getLogger(__name__)
 
 
 User = get_user_model()
