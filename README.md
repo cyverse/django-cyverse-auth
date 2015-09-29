@@ -1,2 +1,6 @@
 # django-iplant-auth
-All iPlant Auth schemes for use in a Django App
+
+A django 'app' that provides easy compatibility with
+all current iPlant Auth schemes.
+
+This app works for both 'resource provider' and 'client'
