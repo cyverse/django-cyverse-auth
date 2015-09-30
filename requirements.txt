@@ -1,6 +1,11 @@
 caslib.py==2.2.2
+oauth2client==1.5.1
 djangorestframework==3.1.1
 jwt.py==0.1.0
 python-ldap==2.4.19
 requests==2.7.0
 threepio==0.2
+
+# For developers -- Uncomment
+# twine
+# wheel

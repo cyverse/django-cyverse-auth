@@ -12,6 +12,7 @@ from iplantauth.models import Token
 from iplantauth.protocol.ldap import ldap_validate, ldap_formatAttrs
 from iplantauth.protocol.ldap import lookupUser as ldap_lookupUser
 from iplantauth.protocol.cas import cas_validateUser
+from iplantauth.protocol.globus import globus_validate_code
 from caslib import OAuthClient as CAS_OAuthClient
 #From troposphere
 import ldap
@@ -171,6 +172,34 @@ def generate_token(user):
     return user_token
 
 
+class GlobusOAuthLoginBackend(object):
+    """
+    Globus OAuth Authentication Backend
+
+    Exchanges an access_token for a user, creates if does not exist
+    """
+
+    def authenticate(self, key=None, request=None):
+        try:
+            user_token = Token.objects.get(key=key)
+        except Token.DoesNotExist:
+            user_token = globus_validate_code(request)
+        if not user_token:
+            return None
+        user = user_token.user
+        return user
+
+    def get_user(self, user_id):
+        """
+        Get a User object from the username.
+        """
+        User = get_user_model()
+        try:
+            return User.objects.get(pk=user_id)
+        except User.DoesNotExist:
+            return None
+
+
 class OAuthLoginBackend(object):
     """
     CAS OAuth Authentication Backend
@@ -178,6 +207,24 @@ class OAuthLoginBackend(object):
     Exchanges an access_token for a user, creates if does not exist
     """
 
+    #def authenticate(self, request=None):
+    #   code_service_ticket = request.GET.get('code',None)
+    #   if code_service_ticket:
+    #       access_token, expiry_date = cas_oauth_client.get_access_token(code_service_ticket)
+
+    #   if not access_token:
+    #       #code_service_ticket has expired (They don't last very long...)
+    #       return None
+    #    try:
+    #        user_token = Token.objects.get(key=access_token)
+
+    #    except Token.DoesNotExist:
+    #        profile = cas_oauth_client.get_profile(access_token=access_token)
+    #        # todo: handle [profile.get('error') = 'expired_accessToken'] error
+    #        user_token = create_user_token_from_cas_profile(profile, access_token)
+
+    #    user = user_token.user
+    #    return user
     def authenticate(self, access_token=None):
         try:
             user_token = Token.objects.get(key=access_token)

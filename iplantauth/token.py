@@ -17,6 +17,7 @@ from iplantauth.models import Token as AuthToken,\
 from iplantauth.models import get_or_create_user
 from iplantauth.protocol.cas import cas_validateUser
 from iplantauth.protocol.cas import cas_profile_for_token
+from iplantauth.protocol.globus import globus_profile_for_token
 from iplantauth.protocol.wso2 import WSO2_JWT
 
 User = get_user_model()
@@ -131,6 +132,67 @@ class JWTTokenAuthentication(TokenAuthentication):
         return None
 
 
+class GlobusOAuthTokenAuthentication(TokenAuthentication):
+
+    """
+    GlobusOAuthTokenAuthentication:
+    To authenticate, pass the token key in the "Authorization" HTTP header,
+    prepend with the string "Token ". For example:
+        Authorization: Token <777-char string>
+    """
+
+    def authenticate(self, request):
+        all_backends = settings.AUTHENTICATION_BACKENDS
+        auth = request.META.get('HTTP_AUTHORIZATION', '').split()
+        if len(auth) == 2 and auth[0].lower() == "token":
+            oauth_token = auth[1]
+            if validate_globus_oauth_token(oauth_token):
+                try:
+                    token = self.model.objects.get(key=oauth_token)
+                except self.model.DoesNotExist:
+                    return None
+                if token and token.user.is_active:
+                    return (token.user, token)
+        return None
+def validate_globus_oauth_token(token, request=None):
+    """
+    Validates the token attached to the request (SessionStorage, GET/POST)
+    On every request, ask OAuth to authorize the token
+    """
+    # Attempt to contact globus
+    try:
+        user_profile = globus_profile_for_token(token)
+    except Exception:
+        logger.exception("Globus could not find profile information for token %s" % token)
+        user_profile = None
+
+    if not user_profile:
+        return False
+    username = user_profile.get("id")
+    if not username:
+        # logger.info("Invalid Profile:%s does not have username/attributes"
+        #            % user_profile)
+        return False
+
+    # NOTE: REMOVE this when it is no longer true!
+    # Force any username lookup to be in lowercase
+    if not username:
+        return None
+    username = username.lower()
+
+    # TEST 1 : Must be in the group 'atmo-user'
+    # NOTE: Test 1 will be IGNORED until we can verify it returns 'entitlement'
+    # EVERY TIME!
+    #    raise Unauthorized("User %s is not a member of group 'atmo-user'"
+    #                       % username)
+    # TODO: TEST 2 : Must have an identity (?)
+    if not User.objects.filter(username=username):
+        raise Unauthorized("User %s does not exist as an User"
+                           % username)
+    auth_token = create_token(username, token)
+    if not auth_token:
+        return False
+    return True
 class OAuthTokenAuthentication(TokenAuthentication):
 
     """

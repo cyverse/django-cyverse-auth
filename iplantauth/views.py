@@ -6,6 +6,7 @@ from datetime import datetime
 import uuid
 
 from django.conf import settings
+from django.contrib.auth import authenticate, login as django_login
 from django.views.decorators.csrf import csrf_exempt
 from django.http import HttpResponse, HttpResponseRedirect
 
@@ -19,7 +20,6 @@ from iplantauth.protocol.globus import globus_authorize, globus_validate_code
 from iplantauth.protocol.ldap import ldap_validate
 from iplantauth.settings import auth_settings
 
-
 #GLOBUS Views
 
 
@@ -31,14 +31,22 @@ def globus_login_redirect(request):
     return globus_authorize(request)
 
 def globus_callback_authorize(request):
-    from iplantauth.protocol.globus import globus_validate_code
-    auth_token = globus_validate_code(request)
-
-    if not auth_token:
+    """
+    TODO: This logic 'lets the auth token escape'
+    May need to refactor this...
+    """
+    code = request.GET.get('code')
+    user_token = globus_validate_code(request)
+    if not user_token:
         # Redirect out of the OAuth loop
         return HttpResponseRedirect(auth_settings.LOGOUT_REDIRECT_URL)
-    request.session['username'] = auth_token.user.username
-    request.session['token'] = auth_token.key
+    user = authenticate(key=user_token.key, request=request)
+    django_login(request, user)
+
+    # Apply newly created AuthToken to session
+    request.session['username'] = user_token.user.username
+    request.session['access_token'] = user_token.key
+    # Redirect to 'next'
     next_url = request.session.get('next', '/application')
     return HttpResponseRedirect(next_url)
 

@@ -85,7 +85,8 @@ def globus_validate_code(request):
     """
     code = request.GET['code']
     if not code:
-        return HttpResponse("NO Code found!")
+        #raise Exception("NO Code found!")
+        return None
     if type(code) == list:
         code = code[0]
     flow = globus_initFlow()
@@ -95,6 +96,8 @@ def globus_validate_code(request):
         logger.exception("Error exchanging code w/ globus")
         return None
     token_profile = credentials.id_token
+    logger.info(credentials.__dict__)
+    import ipdb;ipdb.set_trace()
     username = token_profile['username']
     username = _extract_username_from_email(username)
     email = token_profile['username']
