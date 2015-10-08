@@ -2,6 +2,7 @@
 LDAP authentication methods
 """
 from __future__ import absolute_import
+from iplantauth.settings import auth_settings
 import string
 
 from django.core.handlers.wsgi import WSGIRequest
@@ -10,8 +11,6 @@ import ldap as ldap_driver
 
 import logging
 logger = logging.getLogger(__name__)
-
-from iplantauth.settings import auth_settings
 
 
 def _search_ldap(userid, conn=None):

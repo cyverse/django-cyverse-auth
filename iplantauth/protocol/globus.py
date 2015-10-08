@@ -7,8 +7,8 @@ from django.utils import timezone
 from oauth2client.client import OAuth2WebServerFlow
 from oauth2client.client import Error as OAuthError
 
-from iplantauth.models import create_token, create_access_token, get_access_token
-from iplantauth.settings import auth_settings
+from .models import create_token, create_access_token, get_access_token
+from .settings import auth_settings
 
 import logging
 logger = logging.getLogger(__name__)

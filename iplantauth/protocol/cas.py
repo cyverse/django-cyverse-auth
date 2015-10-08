@@ -2,7 +2,6 @@
 CAS authentication protocol
 
 Contact:        Steven Gregory <sgregory@iplantcollaborative.org>
-                J. Matt Peterson <jmatt@iplantcollaborative.org>
 """
 from datetime import timedelta
 import time
@@ -18,9 +17,9 @@ from caslib import CASClient, SAMLClient, OAuthClient
 import logging
 logger = logging.getLogger(__name__)
 
-from iplantauth.session import create_session_token
-from iplantauth.models import UserProxy
-from iplantauth.settings import auth_settings
+from .session import create_session_token
+from .models import UserProxy
+from .settings import auth_settings
 
 ###########################
 # CAS-SPECIFIC SSO METHODS

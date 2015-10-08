@@ -13,12 +13,12 @@ from django.http import HttpResponse, HttpResponseRedirect
 import logging
 logger = logging.getLogger(__name__)
 
-from iplantauth.models import create_token, userCanEmulate
-from iplantauth.models import Token as AuthToken
-from iplantauth.protocol.cas import cas_validateUser, cas_loginRedirect, get_cas_oauth_client
-from iplantauth.protocol.globus import globus_authorize, globus_validate_code
-from iplantauth.protocol.ldap import ldap_validate
-from iplantauth.settings import auth_settings
+from .models import create_token, userCanEmulate
+from .models import Token as AuthToken
+from .protocol.cas import cas_validateUser, cas_loginRedirect, get_cas_oauth_client
+from .protocol.globus import globus_authorize, globus_validate_code
+from .protocol.ldap import ldap_validate
+from .settings import auth_settings
 
 #GLOBUS Views
 

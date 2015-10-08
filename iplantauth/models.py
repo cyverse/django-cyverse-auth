@@ -5,7 +5,7 @@ from datetime import timedelta
 import hashlib
 import uuid
 
-from iplantauth.settings import auth_settings
+from .settings import auth_settings
 from django.contrib.auth import get_user_model
 from django.db import models
 from django.conf import settings

@@ -6,13 +6,13 @@ from django.conf import settings
 from django.contrib.auth import get_user_model
 
 
-from iplantauth.settings import auth_settings
-from iplantauth.models import get_or_create_user
-from iplantauth.models import Token
-from iplantauth.protocol.ldap import ldap_validate, ldap_formatAttrs
-from iplantauth.protocol.ldap import lookupUser as ldap_lookupUser
-from iplantauth.protocol.cas import cas_validateUser
-from iplantauth.protocol.globus import globus_validate_code
+from .settings import auth_settings
+from .models import get_or_create_user
+from .models import Token
+from .protocol.ldap import ldap_validate, ldap_formatAttrs
+from .protocol.ldap import lookupUser as ldap_lookupUser
+from .protocol.cas import cas_validateUser
+from .protocol.globus import globus_validate_code
 from caslib import OAuthClient as CAS_OAuthClient
 #From troposphere
 import ldap

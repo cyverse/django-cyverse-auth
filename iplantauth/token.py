@@ -11,14 +11,14 @@ from requests.exceptions import ConnectionError
 from rest_framework.authentication import BaseAuthentication
 import logging
 logger = logging.getLogger(__name__)
-from iplantauth.exceptions import Unauthorized
-from iplantauth.models import Token as AuthToken,\
+from .exceptions import Unauthorized
+from .models import Token as AuthToken,\
      create_token
-from iplantauth.models import get_or_create_user
-from iplantauth.protocol.cas import cas_validateUser
-from iplantauth.protocol.cas import cas_profile_for_token
-from iplantauth.protocol.globus import globus_profile_for_token
-from iplantauth.protocol.wso2 import WSO2_JWT
+from .models import get_or_create_user
+from .protocol.cas import cas_validateUser
+from .protocol.cas import cas_profile_for_token
+from .protocol.globus import globus_profile_for_token
+from .protocol.wso2 import WSO2_JWT
 
 User = get_user_model()
 

@@ -1,15 +1,15 @@
 from django.contrib.auth import authenticate, login as django_login
 from django.http import HttpResponseRedirect, HttpResponseForbidden
 
-from iplantauth.settings import auth_settings
+from .settings import auth_settings
 
 from rest_framework.response import Response
 from rest_framework import status
 import logging
 logger = logging.getLogger(__name__)
 
-from iplantauth.protocol.cas import cas_loginRedirect
-from iplantauth.token import validate_token
+from .protocol.cas import cas_loginRedirect
+from .token import validate_token
 
 
 def atmo_login_required(func):

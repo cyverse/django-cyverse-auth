@@ -1,5 +1,5 @@
 from abc import ABCMeta, abstractmethod
-from iplantauth.models import create_token
+from .models import create_token
 
 
 class JWTServiceProvider():
