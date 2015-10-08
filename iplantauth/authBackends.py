@@ -6,12 +6,16 @@ from django.conf import settings
 from django.contrib.auth import get_user_model
 
 
-from iplantauth.settings import auth_settings
-from iplantauth.models import get_or_create_user
-from iplantauth.models import Token
-from iplantauth.protocol.ldap import ldap_validate, ldap_formatAttrs
-from iplantauth.protocol.ldap import lookupUser as ldap_lookupUser
-from iplantauth.protocol.cas import cas_validateUser
+from .settings import auth_settings
+from .models import get_or_create_user
+from .models import Token
+from .protocol.ldap import ldap_validate, ldap_formatAttrs
+from .protocol.ldap import lookupUser as ldap_lookupUser
+from .protocol.cas import cas_validateUser
+from .protocol.globus import (
+    globus_validate_code, _extract_first_last_name,
+    _extract_username_from_email, globus_profile_for_token,
+    create_user_token_from_globus_profile)
 from caslib import OAuthClient as CAS_OAuthClient
 #From troposphere
 import ldap
@@ -154,6 +158,9 @@ cas_oauth_client = CAS_OAuthClient(auth_settings.CAS_SERVER,
 
 
 def create_user_token_from_cas_profile(profile, access_token):
+    raw_email = user_profile = user_info['included']['name']
+    raw_name = user_profile = user_info['included']['display_name']
+    username = _extract_username_from_email(raw_email)
     profile_dict = dict()
     username = profile['id']
     for attr in profile['attributes']:
@@ -171,6 +178,38 @@ def generate_token(user):
     return user_token
 
 
+class GlobusOAuthLoginBackend(object):
+    """
+    Globus OAuth Authentication Backend
+
+    Exchanges an access_token for a user, creates if does not exist
+    """
+
+    def authenticate(self, key=None):
+        user_token = None
+        try:
+            user_token = Token.objects.get(key=key)
+        except Token.DoesNotExist:
+            user_info = globus_profile_for_token(key)
+            if user_info and 'included' in user_info:
+                user_profile = user_info['included']
+                user_token = create_user_token_from_globus_profile(user_profile, key)
+        if not user_token:
+            return None
+        user = user_token.user
+        return user
+
+    def get_user(self, user_id):
+        """
+        Get a User object from the username.
+        """
+        User = get_user_model()
+        try:
+            return User.objects.get(pk=user_id)
+        except User.DoesNotExist:
+            return None
+
+
 class OAuthLoginBackend(object):
     """
     CAS OAuth Authentication Backend
@@ -178,6 +217,24 @@ class OAuthLoginBackend(object):
     Exchanges an access_token for a user, creates if does not exist
     """
 
+    #def authenticate(self, request=None):
+    #   code_service_ticket = request.GET.get('code',None)
+    #   if code_service_ticket:
+    #       access_token, expiry_date = cas_oauth_client.get_access_token(code_service_ticket)
+
+    #   if not access_token:
+    #       #code_service_ticket has expired (They don't last very long...)
+    #       return None
+    #    try:
+    #        user_token = Token.objects.get(key=access_token)
+
+    #    except Token.DoesNotExist:
+    #        profile = cas_oauth_client.get_profile(access_token=access_token)
+    #        # todo: handle [profile.get('error') = 'expired_accessToken'] error
+    #        user_token = create_user_token_from_cas_profile(profile, access_token)
+
+    #    user = user_token.user
+    #    return user
     def authenticate(self, access_token=None):
         try:
             user_token = Token.objects.get(key=access_token)

@@ -9,7 +9,7 @@ from urlparse import urlparse
 from django.contrib.auth import get_user_model
 from django.conf import settings
 from iplantauth.exceptions import Unauthorized
-from iplantauth.protocol.jwt_oauth import JWTServiceProvider
+from .jwt_oauth import JWTServiceProvider
 import logging
 logger = logging.getLogger(__name__)
 

@@ -11,13 +11,14 @@ from requests.exceptions import ConnectionError
 from rest_framework.authentication import BaseAuthentication
 import logging
 logger = logging.getLogger(__name__)
-from iplantauth.exceptions import Unauthorized
-from iplantauth.models import Token as AuthToken,\
+from .exceptions import Unauthorized
+from .models import Token as AuthToken,\
      create_token
-from iplantauth.models import get_or_create_user
-from iplantauth.protocol.cas import cas_validateUser
-from iplantauth.protocol.cas import cas_profile_for_token
-from iplantauth.protocol.wso2 import WSO2_JWT
+from .models import get_or_create_user
+from .protocol.cas import cas_validateUser
+from .protocol.cas import cas_profile_for_token
+from .protocol.globus import globus_profile_for_token, create_user_token_from_globus_profile
+from .protocol.wso2 import WSO2_JWT
 
 User = get_user_model()
 
@@ -131,6 +132,52 @@ class JWTTokenAuthentication(TokenAuthentication):
         return None
 
 
+class GlobusOAuthTokenAuthentication(TokenAuthentication):
+
+    """
+    GlobusOAuthTokenAuthentication:
+    To authenticate, pass the token key in the "Authorization" HTTP header,
+    prepend with the string "Token ". For example:
+        Authorization: Token <777-char string>
+    """
+
+    def authenticate(self, request):
+        all_backends = settings.AUTHENTICATION_BACKENDS
+        auth = request.META.get('HTTP_AUTHORIZATION', '').split()
+        if len(auth) == 2 and auth[0].lower() == "token":
+            oauth_token = auth[1]
+            if validate_globus_oauth_token(oauth_token):
+                try:
+                    token = self.model.objects.get(key=oauth_token)
+                except self.model.DoesNotExist:
+                    return None
+                if token and token.user.is_active:
+                    return (token.user, token)
+        return None
+def validate_globus_oauth_token(token, request=None):
+    """
+    Validates the token attached to the request (SessionStorage, GET/POST)
+    On every request, ask OAuth to authorize the token
+    """
+    # Attempt to contact globus
+    try:
+        user_profile = globus_profile_for_token(token)
+    except Exception:
+        logger.exception("Globus could not find profile information for token %s" % token)
+        user_profile = None
+
+    if not user_profile:
+        return False
+    # Attempt to 'read' the user_profile
+    try:
+        auth_token = create_user_token_from_globus_profile(user_profile, token)
+    except Exception:
+        logger.exception("The method for which to 'read' a globus token has changed. Check the code for more details")
+        auth_token = None
+    if not auth_token:
+        return False
+    return True
+
 class OAuthTokenAuthentication(TokenAuthentication):
 
     """
@@ -146,7 +193,7 @@ class OAuthTokenAuthentication(TokenAuthentication):
             'firstName': "Mocky Mock",
             'lastName': "MockDoodle",
             'email': '%s@iplantcollaborative.org' % settings.ALWAYS_AUTH_USER,
-            'entitlement': []})
+            })
         _, token = self.model.objects.get_or_create(key=oauth_token, user=user)
         return user, token
 
