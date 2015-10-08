@@ -6,6 +6,10 @@ from datetime import timedelta
 
 from django.conf import settings
 from django.test.signals import setting_changed
+import sys, os
+
+APP_DIRECTORY = os.path.abspath(os.path.dirname(__file__))
+sys.path.insert(0, APP_DIRECTORY)
 
 USER_SETTINGS = getattr(settings, 'AUTHENTICATION', {})
 

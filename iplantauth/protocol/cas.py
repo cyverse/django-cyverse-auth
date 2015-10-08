@@ -17,9 +17,9 @@ from caslib import CASClient, SAMLClient, OAuthClient
 import logging
 logger = logging.getLogger(__name__)
 
-from .session import create_session_token
-from .models import UserProxy
-from .settings import auth_settings
+from iplantauth.session import create_session_token
+from iplantauth.settings import auth_settings
+from iplantauth.models import UserProxy
 
 ###########################
 # CAS-SPECIFIC SSO METHODS

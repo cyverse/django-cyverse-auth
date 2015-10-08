@@ -17,7 +17,7 @@ from .models import Token as AuthToken,\
 from .models import get_or_create_user
 from .protocol.cas import cas_validateUser
 from .protocol.cas import cas_profile_for_token
-from .protocol.globus import globus_profile_for_token
+from .protocol.globus import globus_profile_for_token, create_user_token_from_globus_profile
 from .protocol.wso2 import WSO2_JWT
 
 User = get_user_model()
@@ -168,31 +168,16 @@ def validate_globus_oauth_token(token, request=None):
 
     if not user_profile:
         return False
-    username = user_profile.get("id")
-    if not username:
-        # logger.info("Invalid Profile:%s does not have username/attributes"
-        #            % user_profile)
-        return False
-
-    # NOTE: REMOVE this when it is no longer true!
-    # Force any username lookup to be in lowercase
-    if not username:
-        return None
-    username = username.lower()
-
-    # TEST 1 : Must be in the group 'atmo-user'
-    # NOTE: Test 1 will be IGNORED until we can verify it returns 'entitlement'
-    # EVERY TIME!
-    #    raise Unauthorized("User %s is not a member of group 'atmo-user'"
-    #                       % username)
-    # TODO: TEST 2 : Must have an identity (?)
-    if not User.objects.filter(username=username):
-        raise Unauthorized("User %s does not exist as an User"
-                           % username)
-    auth_token = create_token(username, token)
+    # Attempt to 'read' the user_profile
+    try:
+        auth_token = create_user_token_from_globus_profile(user_profile, token)
+    except Exception:
+        logger.exception("The method for which to 'read' a globus token has changed. Check the code for more details")
+        auth_token = None
     if not auth_token:
         return False
     return True
+
 class OAuthTokenAuthentication(TokenAuthentication):
 
     """
@@ -208,7 +193,7 @@ class OAuthTokenAuthentication(TokenAuthentication):
             'firstName': "Mocky Mock",
             'lastName': "MockDoodle",
             'email': '%s@iplantcollaborative.org' % settings.ALWAYS_AUTH_USER,
-            'entitlement': []})
+            })
         _, token = self.model.objects.get_or_create(key=oauth_token, user=user)
         return user, token
 

@@ -24,7 +24,6 @@ from .settings import auth_settings
 
 
 def globus_login_redirect(request):
-
     next_url = request.GET.get('next', '/application')
     request.session['next'] = next_url
 
@@ -40,7 +39,7 @@ def globus_callback_authorize(request):
     if not user_token:
         # Redirect out of the OAuth loop
         return HttpResponseRedirect(auth_settings.LOGOUT_REDIRECT_URL)
-    user = authenticate(key=user_token.key, request=request)
+    user = authenticate(key=user_token.key)
     django_login(request, user)
 
     # Apply newly created AuthToken to session

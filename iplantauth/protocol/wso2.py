@@ -8,8 +8,8 @@ from urlparse import urlparse
 
 from django.contrib.auth import get_user_model
 from django.conf import settings
-from .exceptions import Unauthorized
-from .protocol.jwt_oauth import JWTServiceProvider
+from iplantauth.exceptions import Unauthorized
+from .jwt_oauth import JWTServiceProvider
 import logging
 logger = logging.getLogger(__name__)
 
