@@ -17,5 +17,6 @@ from django.conf.urls import include, url
 from django.contrib import admin
 
 urlpatterns = [
+    include(r"^auth/", include("iplantauth.urls", namespace="iplantauth")),
     url(r'^admin/', include(admin.site.urls)),
 ]
