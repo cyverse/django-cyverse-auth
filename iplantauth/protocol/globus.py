@@ -136,6 +136,9 @@ def create_user_token_from_globus_profile(profile, access_token):
     to exchange a profile (that was retrieved via a tokeninfo endpoint)
     for a UserToken that can then be internally validated in an 'authorize' authBackend step..
     """
+    if not profile or 'included' not in profile:
+        return None
+
     #NOTE: This formatting will likely change on globus' end
     id_profile = profile['included'][0]['attributes']
     expiry = profile['data']['attributes']['expires']

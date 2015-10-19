@@ -158,9 +158,6 @@ cas_oauth_client = CAS_OAuthClient(auth_settings.CAS_SERVER,
 
 
 def create_user_token_from_cas_profile(profile, access_token):
-    raw_email = user_profile = user_info['included']['name']
-    raw_name = user_profile = user_info['included']['display_name']
-    username = _extract_username_from_email(raw_email)
     profile_dict = dict()
     username = profile['id']
     for attr in profile['attributes']:
@@ -217,24 +214,6 @@ class OAuthLoginBackend(object):
     Exchanges an access_token for a user, creates if does not exist
     """
 
-    #def authenticate(self, request=None):
-    #   code_service_ticket = request.GET.get('code',None)
-    #   if code_service_ticket:
-    #       access_token, expiry_date = cas_oauth_client.get_access_token(code_service_ticket)
-
-    #   if not access_token:
-    #       #code_service_ticket has expired (They don't last very long...)
-    #       return None
-    #    try:
-    #        user_token = Token.objects.get(key=access_token)
-
-    #    except Token.DoesNotExist:
-    #        profile = cas_oauth_client.get_profile(access_token=access_token)
-    #        # todo: handle [profile.get('error') = 'expired_accessToken'] error
-    #        user_token = create_user_token_from_cas_profile(profile, access_token)
-
-    #    user = user_token.user
-    #    return user
     def authenticate(self, access_token=None):
         try:
             user_token = Token.objects.get(key=access_token)
