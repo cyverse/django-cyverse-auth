@@ -115,18 +115,28 @@ def globus_validate_code(request):
     flow = globus_initFlow()
     try:
         credentials = flow.step2_exchange(code)
+        logger.info(credentials.__dict__)
     except OAuthError as err:
         logger.exception("Error exchanging code w/ globus")
         return None
+    # Parsing
     token_profile = credentials.id_token
     user_access_token = credentials.access_token
-    logger.info(credentials.__dict__)
+    expiry_date = credentials.token_expiry
     username = token_profile['username']
     username = _extract_username_from_email(username)
     email = token_profile['username']
     full_name = token_profile['name']
     issuer = token_profile['iss']
-    expiry_date = credentials.token_expiry
+    # Creation
+    first_name, last_name = _extract_first_last_name(raw_name)
+    user_profile = {
+        'username':username,
+        'firstName':first_name,
+        'lastName':last_name,
+        'email': raw_email,
+    }
+    user = get_or_create_user(username, user_profile)
     auth_token = create_token(username, user_access_token, expiry_date, issuer)
     return auth_token
 
