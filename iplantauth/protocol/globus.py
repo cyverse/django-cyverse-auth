@@ -129,12 +129,12 @@ def globus_validate_code(request):
     full_name = token_profile['name']
     issuer = token_profile['iss']
     # Creation
-    first_name, last_name = _extract_first_last_name(raw_name)
+    first_name, last_name = _extract_first_last_name(full_name)
     user_profile = {
         'username':username,
         'firstName':first_name,
         'lastName':last_name,
-        'email': raw_email,
+        'email': email,
     }
     user = get_or_create_user(username, user_profile)
     auth_token = create_token(username, user_access_token, expiry_date, issuer)
