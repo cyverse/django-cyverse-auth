@@ -283,7 +283,7 @@ class MockLoginBackend(authentication.BaseAuthentication):
         Return user if Always
         Return None Never.
         """
-        return get_or_create_user({
+        return get_or_create_user(settings.ALWAYS_AUTH_USER, {
             'username':settings.ALWAYS_AUTH_USER,
             'firstName':"Mocky Mock",
             'lastName':"MockDoodle",
