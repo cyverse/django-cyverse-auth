@@ -97,6 +97,12 @@ class TokenAuthentication(BaseAuthentication):
     """
     model = AuthToken
 
+    def authenticate_header(self, request):
+        """
+        Status to pass when user is Anonymous (No login was performed)
+        """
+        return "Token the_token_key_here"
+
     def authenticate(self, request):
         token_key = None
         auth = request.META.get('HTTP_AUTHORIZATION', '').split()
@@ -105,7 +111,7 @@ class TokenAuthentication(BaseAuthentication):
 
         if not token_key and 'token' in request.session:
             token_key = request.session['token']
-        if validate_token(token_key):
+        if token_key and validate_token(token_key):
             token = self.model.objects.get(key=token_key)
             if token.user.is_active:
                 return (token.user, token)
