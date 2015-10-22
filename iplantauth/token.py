@@ -268,6 +268,9 @@ def validate_token(token, request=None):
         user = auth_token.user
     except AuthToken.DoesNotExist:
         logger.info("AuthToken Retrieved:%s Does not exist." % (token,))
+        all_backends = settings.AUTHENTICATION_BACKENDS
+        if 'iplantauth.authBackends.MockLoginBackend' in all_backends:
+            return True
         return False
     if auth_token.is_expired():
         if request and request.META['REQUEST_METHOD'] != 'GET':
