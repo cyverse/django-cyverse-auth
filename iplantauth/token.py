@@ -97,12 +97,6 @@ class TokenAuthentication(BaseAuthentication):
     """
     model = AuthToken
 
-    def authenticate_header(self, request):
-        """
-        Status to pass when user is Anonymous (No login was performed)
-        """
-        return "Token the_token_key_here"
-
     def authenticate(self, request):
         token_key = None
         auth = request.META.get('HTTP_AUTHORIZATION', '').split()
@@ -111,7 +105,7 @@ class TokenAuthentication(BaseAuthentication):
 
         if not token_key and 'token' in request.session:
             token_key = request.session['token']
-        if token_key and validate_token(token_key):
+        if validate_token(token_key):
             token = self.model.objects.get(key=token_key)
             if token.user.is_active:
                 return (token.user, token)
@@ -274,30 +268,26 @@ def validate_token(token, request=None):
         user = auth_token.user
     except AuthToken.DoesNotExist:
         logger.info("AuthToken Retrieved:%s Does not exist." % (token,))
-        all_backends = settings.AUTHENTICATION_BACKENDS
-        if not 'iplantauth.authBackends.MockLoginBackend' in all_backends:
-            return False
-        #ASSERT: This is being treated as a 'MockLogin' -- Allow Token Creation of invalid token key.
-        auth_token = create_token(settings.ALWAYS_AUTH_USER, token)
-    # Expiration test
-    if not auth_token.is_expired():
-        return True
-    # Expired Token -- Bypass Exception Rules
-    if request and request.META['REQUEST_METHOD'] != 'GET':
-        # 1. Attempt to re-authenticate user if possible. (CAS ONLY)
-        user_to_auth = request.session.get('emulated_by', user)
-        if cas_validateUser(user_to_auth):
-            auth_token.update_expiration()
-            auth_token.save()
-            return True
+        return False
+    if auth_token.is_expired():
+        if request and request.META['REQUEST_METHOD'] != 'GET':
+            # See if the user (Or the user who is emulating a user) can be
+            # re-authed.
+            user_to_auth = request.session.get('emulated_by', user)
+            if cas_validateUser(user_to_auth):
+                auth_token.update_expiration()
+                auth_token.save()
+                return True
+            else:
+                logger.info("Token %s expired, User %s "
+                            "could not be reauthenticated in CAS"
+                            % (token, user))
+                return False
         else:
-            logger.info("Token %s expired, User %s "
-                        "could not be reauthenticated in CAS"
-                        % (token, user))
-            return False
+            logger.debug("Token %s EXPIRED, but allowing User %s to GET data.."
+                         % (token, user))
+            return True
     else:
-        logger.debug("Token %s EXPIRED, but allowing User %s to GET data.."
-                     % (token, user))
         return True
 
 
