@@ -15,48 +15,53 @@ from iplantauth.settings import auth_settings
 import logging
 logger = logging.getLogger(__name__)
 
-def globus_bootstrap():
-    """
-    'BootStrap' OAuth by passing the identifying services:
-    ClientID && ClientSecret w/ 'client_credentials' Grant & Scope
-    """
-    data = {
-        'grant_type': 'client_credentials',
-        'scope': auth_settings.GLOBUS_OAUTH_CREDENTIALS_SCOPE
-    }
-    userAndPass = "%s:%s" % (auth_settings.GLOBUS_OAUTH_ID, auth_settings.GLOBUS_OAUTH_SECRET)
-    b64enc_creds = b64encode(userAndPass)
-    response = requests.post(
-            auth_settings.GLOBUS_TOKEN_URL,
-            data=data,
-            headers={
-                'Authorization': 'Basic %s' % b64enc_creds,
-                'content-type': 'x-www-form-urlencoded'})
-    if response.status_code != 200:
-        raise Exception("Received unexpected result from OAuth Server. Check Response:%s" % response.__dict__)
-    json_obj = response.json()
-    return json_obj
+#def globus_bootstrap():
+#    """
+#    'BootStrap' OAuth by passing the identifying services:
+#    ClientID && ClientSecret w/ 'client_credentials' Grant & Scope
+#    """
+#    data = {
+#        'grant_type': 'client_credentials',
+#        'scope': auth_settings.GLOBUS_OAUTH_CREDENTIALS_SCOPE
+#    }
+#    userAndPass = "%s:%s" % (auth_settings.GLOBUS_OAUTH_ID, auth_settings.GLOBUS_OAUTH_SECRET)
+#    b64enc_creds = b64encode(userAndPass)
+#    response = requests.post(
+#            auth_settings.GLOBUS_TOKEN_URL,
+#            data=data,
+#            headers={
+#                'Authorization': 'Basic %s' % b64enc_creds,
+#                'content-type': 'x-www-form-urlencoded'})
+#    if response.status_code != 200:
+#        raise Exception("Received unexpected result from OAuth Server. Check Response:%s" % response.__dict__)
+#    json_obj = response.json()
+#    return json_obj
 
 def globus_initFlow():
     """
     Retrieve cached/Create a new access token
     and use it to create an OAuth2WebServerFlow
     """
-    access_token = get_access_token(auth_settings.GLOBUS_TOKEN_URL)
-    if not access_token:
-        #Cache it.
-        start_time = timezone.now()
-        globus_token = globus_bootstrap()
-        token_expiry = start_time + timezone.timedelta(seconds=globus_token['expires_in'])
-        token_key = globus_token['access_token']
-        access_token = create_access_token(
-                token_key, token_expiry,
-                auth_settings.GLOBUS_TOKEN_URL)
-    # use access_token as a Bearer Token
+    # access_token = get_access_token(auth_settings.GLOBUS_TOKEN_URL)
+    # if not access_token:
+    #     #Cache it.
+    #     start_time = timezone.now()
+    #     globus_token = globus_bootstrap()
+    #     token_expiry = start_time + timezone.timedelta(seconds=globus_token['expires_in'])
+    #     token_key = globus_token['access_token']
+    #     access_token = create_access_token(
+    #             token_key, token_expiry,
+    #             auth_settings.GLOBUS_TOKEN_URL)
+    # # use access_token as a Bearer Token
+    # auth_header = "Bearer %s" % access_token.key,
+    # Use client_id:client_secret for authorization
+    userAndPass = "%s:%s" % (auth_settings.GLOBUS_OAUTH_ID, auth_settings.GLOBUS_OAUTH_SECRET)
+    # userAndPass = b64encode(userAndPass)
+    auth_header = "Basic %s" % userAndPass
     flow = OAuth2WebServerFlow(
         client_id=auth_settings.GLOBUS_OAUTH_ID,
-        scope=auth_settings.GLOBUS_OAUTH_AUTHENTICATION_SCOPE,
-        authorization_header="Bearer %s" % access_token.key,
+        scope=auth_settings.GLOBUS_OAUTH_ATMOSPHERE_SCOPE,
+        authorization_header=auth_header,
         redirect_uri=auth_settings.OAUTH_CLIENT_CALLBACK,
         auth_uri=auth_settings.GLOBUS_AUTH_URL,
         token_uri=auth_settings.GLOBUS_TOKEN_URL)
