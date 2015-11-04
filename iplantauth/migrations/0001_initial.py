@@ -29,7 +29,7 @@ class Migration(migrations.Migration):
                 ('issuer', models.TextField(null=True, blank=True)),
                 ('issuedTime', models.DateTimeField(auto_now_add=True)),
                 ('expireTime', models.DateTimeField(null=True, blank=True)),
-                ('user', models.ForeignKey(related_name='auth_token', to=settings.AUTH_USER_MODEL)),
+                ('user', models.ForeignKey(related_name='auth_tokens', to=settings.AUTH_USER_MODEL)),
             ],
         ),
         migrations.CreateModel(
