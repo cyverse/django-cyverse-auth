@@ -1,4 +1,5 @@
 import requests
+import json, os
 
 from base64 import b64encode
 from django.http import HttpResponse, HttpResponseRedirect
@@ -100,19 +101,22 @@ def _map_email_to_user(user_email):
     Input:  test@fake.com
     Output: test
     """
-    USER_EMAIL_MAPPING = {
-        "sgregory@xsede.org": "sgregory",
-        "lenards@xsede.org": "lenards",
-        "tharon@xsede.org": "tharon",
-        "edwin@xsede.org": "edwin",
-        "mattd@xsede.org": "mattd",
-        "nirav@xsede.org": "nirav",
-        "jeremy@xsede.org": "jfischer",
-        "vaughn@xsede.org": "vaughn",
-        }
-    if user_email not in USER_EMAIL_MAPPING:
+    if not auth_settings.GLOBUS_MAPPING_FILE:
+        return raw_username
+    if not os.path.exists(auth_settings.GLOBUS_MAPPING_FILE):
+        logger.warn("GLOBUS_MAPPING_FILE %s does not exist!" % auth_settings.GLOBUS_MAPPING_FILE)
         return None
-    return USER_EMAIL_MAPPING[user_email]
+    try:
+        with open(auth_settings.GLOBUS_MAPPING_FILE) as the_file:
+            text = the_file.read()
+            user_mapping = json.loads(text)
+    except:
+        logger.warn("GLOBUS_MAPPING_FILE %s is NOT VALID JSON!" % auth_settings.GLOBUS_MAPPING_FILE)
+        user_mapping = {}
+
+    if raw_username not in user_mapping:
+        return None
+    return user_mapping[raw_username]
 
 
 def globus_validate_code(request):
