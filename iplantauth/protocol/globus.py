@@ -106,6 +106,9 @@ def _map_email_to_user(user_email):
         "tharon@xsede.org": "tharon",
         "edwin@xsede.org": "edwin",
         "mattd@xsede.org": "mattd",
+        "nirav@xsede.org": "nirav",
+        "jeremy@xsede.org": "jfischer",
+        "vaughn@xsede.org": "vaughn",
         }
     if user_email not in USER_EMAIL_MAPPING:
         return None
@@ -170,15 +173,15 @@ def create_user_token_from_globus_profile(profile, access_token):
     id_profile = profile['included'][0]['attributes']
     expiry = profile['data']['attributes']['expires']
 
-    raw_email = id_profile['name']
+    raw_username = id_profile['name']
     raw_name = id_profile['display_name']
-    username = _extract_username_from_email(raw_email)
+    username = _map_email_to_user(raw_username)
     first_name, last_name = _extract_first_last_name(raw_name)
     profile_dict = {
         'username':username,
         'firstName':first_name,
         'lastName':last_name,
-        'email': raw_email,
+        'email': raw_username,
     }
     user = get_or_create_user(username, profile_dict)
     user_token = create_token(user.username, access_token, expiry)

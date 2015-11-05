@@ -14,7 +14,7 @@ from .protocol.ldap import lookupUser as ldap_lookupUser
 from .protocol.cas import cas_validateUser
 from .protocol.globus import (
     globus_validate_code, _extract_first_last_name,
-    _extract_username_from_email, globus_profile_for_token,
+    globus_profile_for_token,
     create_user_token_from_globus_profile)
 from caslib import OAuthClient as CAS_OAuthClient
 #From troposphere
