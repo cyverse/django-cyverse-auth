@@ -56,8 +56,8 @@ def globus_initFlow():
     # auth_header = "Bearer %s" % access_token.key,
     # Use client_id:client_secret for authorization
     userAndPass = "%s:%s" % (auth_settings.GLOBUS_OAUTH_ID, auth_settings.GLOBUS_OAUTH_SECRET)
-    # userAndPass = b64encode(userAndPass)
-    auth_header = "Basic %s" % userAndPass
+    B64_userAndPass = b64encode(userAndPass)
+    auth_header = "Basic %s" % B64_userAndPass
     flow = OAuth2WebServerFlow(
         client_id=auth_settings.GLOBUS_OAUTH_ID,
         scope=auth_settings.GLOBUS_OAUTH_ATMOSPHERE_SCOPE,
