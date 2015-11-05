@@ -95,12 +95,21 @@ def _extract_first_last_name(user_name):
     split_name = user_name.split()
     return split_name[0], ' '.join(split_name[1:])
 
-def _extract_username_from_email(user_email):
+def _map_email_to_user(user_email):
     """
     Input:  test@fake.com
     Output: test
     """
-    return user_email.split('@')[0]
+    USER_EMAIL_MAPPING = {
+        "sgregory@xsede.org": "sgregory",
+        "lenards@xsede.org": "lenards",
+        "tharon@xsede.org": "tharon",
+        "edwin@xsede.org": "edwin",
+        "mattd@xsede.org": "mattd",
+        }
+    if user_email not in USER_EMAIL_MAPPING:
+        return None
+    return USER_EMAIL_MAPPING[user_email]
 
 
 def globus_validate_code(request):
@@ -128,8 +137,11 @@ def globus_validate_code(request):
     token_profile = credentials.id_token
     user_access_token = credentials.access_token
     expiry_date = credentials.token_expiry
-    username = token_profile['username']
-    username = _extract_username_from_email(username)
+    raw_username = token_profile['username']
+    username = _map_email_to_user(raw_username)
+    if not username:
+        logger.info("User %s is not part of the 'valid mapping' and will be skipped!" % raw_username)
+        return None
     email = token_profile['username']
     full_name = token_profile['name']
     issuer = token_profile['iss']
