@@ -24,10 +24,13 @@ DEFAULTS =  {
     "OAUTH_CLIENT_KEY": None,
     "OAUTH_CLIENT_SECRET": None,
     "OAUTH_CLIENT_CALLBACK": None,
-
     # LDAP
     "LDAP_SERVER": None,
     "LDAP_SERVER_DN": None,
+    #WSO2+JWT
+    "JWT_SP_PUBLIC_KEY_FILE": None,
+    "JWT_CLIENT_KEY": None,
+    "JWT_CLIENT_SECRET": None,
     #GLOBUS
     "GLOBUS_MAPPING_FILE": None,
     "GLOBUS_OAUTH_ID": None,
