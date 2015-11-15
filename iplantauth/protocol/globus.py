@@ -102,6 +102,7 @@ def _map_email_to_user(user_email):
     Output: test
     """
     if not auth_settings.GLOBUS_MAPPING_FILE:
+        logger.warn("GLOBUS_MAPPING_FILE is NOT defined! Check auth settings")
         return raw_username
     if not os.path.exists(auth_settings.GLOBUS_MAPPING_FILE):
         logger.warn("GLOBUS_MAPPING_FILE %s does not exist!" % auth_settings.GLOBUS_MAPPING_FILE)
@@ -116,7 +117,9 @@ def _map_email_to_user(user_email):
 
     if raw_username not in user_mapping:
         return None
-    return user_mapping[raw_username]
+    username = user_mapping[raw_username]
+    logger.info("GLOBUS_MAPPING_FILE identified %s -> %s" % (raw_username, username))
+    return username
 
 
 def globus_validate_code(request):
