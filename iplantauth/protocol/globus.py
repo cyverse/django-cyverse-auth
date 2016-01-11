@@ -16,45 +16,12 @@ from iplantauth.settings import auth_settings
 import logging
 logger = logging.getLogger(__name__)
 
-#def globus_bootstrap():
-#    """
-#    'BootStrap' OAuth by passing the identifying services:
-#    ClientID && ClientSecret w/ 'client_credentials' Grant & Scope
-#    """
-#    data = {
-#        'grant_type': 'client_credentials',
-#        'scope': auth_settings.GLOBUS_OAUTH_CREDENTIALS_SCOPE
-#    }
-#    userAndPass = "%s:%s" % (auth_settings.GLOBUS_OAUTH_ID, auth_settings.GLOBUS_OAUTH_SECRET)
-#    b64enc_creds = b64encode(userAndPass)
-#    response = requests.post(
-#            auth_settings.GLOBUS_TOKEN_URL,
-#            data=data,
-#            headers={
-#                'Authorization': 'Basic %s' % b64enc_creds,
-#                'content-type': 'x-www-form-urlencoded'})
-#    if response.status_code != 200:
-#        raise Exception("Received unexpected result from OAuth Server. Check Response:%s" % response.__dict__)
-#    json_obj = response.json()
-#    return json_obj
 
 def globus_initFlow():
     """
     Retrieve cached/Create a new access token
     and use it to create an OAuth2WebServerFlow
     """
-    # access_token = get_access_token(auth_settings.GLOBUS_TOKEN_URL)
-    # if not access_token:
-    #     #Cache it.
-    #     start_time = timezone.now()
-    #     globus_token = globus_bootstrap()
-    #     token_expiry = start_time + timezone.timedelta(seconds=globus_token['expires_in'])
-    #     token_key = globus_token['access_token']
-    #     access_token = create_access_token(
-    #             token_key, token_expiry,
-    #             auth_settings.GLOBUS_TOKEN_URL)
-    # # use access_token as a Bearer Token
-    # auth_header = "Bearer %s" % access_token.key,
     # Use client_id:client_secret for authorization
     userAndPass = "%s:%s" % (auth_settings.GLOBUS_OAUTH_ID, auth_settings.GLOBUS_OAUTH_SECRET)
     b64_userAndPass = b64encode(userAndPass)
@@ -75,14 +42,21 @@ def globus_authorize(request):
     """
     flow = globus_initFlow()
     auth_uri = flow.step1_get_authorize_url()
+    auth_uri += '&authentication_hint=xsede'
+    auth_uri = auth_uri.replace('access_type=offline','access_type=online')
+    logger.warn(auth_uri)
     return HttpResponseRedirect(auth_uri)
 
 def globus_profile_for_token(globus_user_token):
     try:
         logger.info("Request Token Info for key %s" % globus_user_token)
-        r = requests.get(
+        userAndPass = "%s:%s" % (auth_settings.GLOBUS_OAUTH_ID, auth_settings.GLOBUS_OAUTH_SECRET)
+        b64_userAndPass = b64encode(userAndPass)
+        auth_header = "Basic %s" % b64_userAndPass
+        r = requests.post(
             auth_settings.GLOBUS_TOKENINFO_URL+'?include=effective', verify=False,
-            headers={'Authorization':'Bearer %s' % globus_user_token})
+            data={'token':globus_user_token},
+            headers={'Authorization':auth_header})
         j_data = r.json()
         logger.info(j_data)
         return j_data
@@ -90,19 +64,29 @@ def globus_profile_for_token(globus_user_token):
         logger.exception("Error retrieving profile from globus")
         return None
 
+def _extract_expiry_date(epoch_secs):
+    if type(epoch_secs) != int:
+        try:
+            epoch_secs = int(date_int)
+        except:
+            logger.exception("Expected date to be an integer (Seconds from epoch). This method should be modified to the new use case for globus 'exp'")
+            return None
+    epoch = timezone.datetime(month=1, day=1, year=1970)
+    return epoch + timezone.timedelta(seconds=epoch_secs)
+
 def _extract_first_last_name(user_name):
     if ' ' not in user_name:
         return '', user_name
     split_name = user_name.split()
     return split_name[0], ' '.join(split_name[1:])
 
-def _map_email_to_user(user_email):
+def _map_email_to_user(raw_username):
     """
     Input:  test@fake.com
     Output: test
     """
     if not auth_settings.GLOBUS_MAPPING_FILE:
-        logger.warn("GLOBUS_MAPPING_FILE is NOT defined! Check auth settings")
+        logger.info("GLOBUS_MAPPING_FILE NOT defined. Check your auth settings!!")
         return raw_username
     if not os.path.exists(auth_settings.GLOBUS_MAPPING_FILE):
         logger.warn("GLOBUS_MAPPING_FILE %s does not exist!" % auth_settings.GLOBUS_MAPPING_FILE)
@@ -173,15 +157,13 @@ def create_user_token_from_globus_profile(profile, access_token):
     to exchange a profile (that was retrieved via a tokeninfo endpoint)
     for a UserToken that can then be internally validated in an 'authorize' authBackend step..
     """
-    if not profile or 'included' not in profile:
-        return None
 
-    #NOTE: This formatting will likely change on globus' end
-    id_profile = profile['included'][0]['attributes']
-    expiry = profile['data']['attributes']['expires']
-
-    raw_username = id_profile['name']
-    raw_name = id_profile['display_name']
+    logger.info(profile)
+    expiry = profile['exp'] # This is an 'epoch-int'
+    expiry = _extract_expiry_date(expiry)
+    issued_at = profile['iat']
+    raw_username = profile['username']
+    raw_name = profile['display_name']
     username = _map_email_to_user(raw_username)
     first_name, last_name = _extract_first_last_name(raw_name)
     profile_dict = {

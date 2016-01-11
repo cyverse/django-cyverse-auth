@@ -94,12 +94,11 @@ class WSO2_JWT(JWTServiceProvider):
 
         return user, token_expires
 
-    def _strip_wso2_username(self, raw_username):
-        regexp = re.search(r'agavedev\/(.*)@', raw_username)
+    def _strip_wso2_username(self, username):
+        regexp = re.search(r'agavedev\/(.*)@', username)
         username =  regexp.group(1)
 
         # NOTE: REMOVE this when it is no longer true!
         # Force any username lookup to be in lowercase
         username = username.lower()
-        logger.debug("Mapped %s ->%s" % (raw_username, username))
         return username

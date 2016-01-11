@@ -189,10 +189,8 @@ class GlobusOAuthLoginBackend(object):
         try:
             user_token = Token.objects.get(key=key)
         except Token.DoesNotExist:
-            user_info = globus_profile_for_token(key)
-            if user_info and 'included' in user_info:
-                user_profile = user_info['included']
-                user_token = create_user_token_from_globus_profile(user_profile, key)
+            user_profile = globus_profile_for_token(key)
+            user_token = create_user_token_from_globus_profile(user_profile, key)
         if not user_token:
             return None
         user = user_token.user
@@ -258,7 +256,7 @@ class OAuthTokenLoginBackend(authentication.BaseAuthentication):
             user_token = Token.objects.get(key=access_token)
 
         except Token.DoesNotExist:
-            profile = cas_oauth_client.get_profile(access_token=access_token)
+            profile = cas_oauth_client.get_profile(key=access_token)
             error = profile.get('error')
 
             if error:
