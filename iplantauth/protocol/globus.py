@@ -131,12 +131,12 @@ def globus_validate_code(request):
     token_profile = credentials.id_token
     user_access_token = credentials.access_token
     expiry_date = credentials.token_expiry
-    raw_username = token_profile['username']
+    raw_username = token_profile['preferred_username']
+    email = token_profile['email']
     username = _map_email_to_user(raw_username)
     if not username:
         logger.info("User %s is not part of the 'valid mapping' and will be skipped!" % raw_username)
         return None
-    email = token_profile['username']
     full_name = token_profile['name']
     issuer = token_profile['iss']
     # Creation
@@ -163,14 +163,15 @@ def create_user_token_from_globus_profile(profile, access_token):
     expiry = _extract_expiry_date(expiry)
     issued_at = profile['iat']
     raw_username = profile['username']
-    raw_name = profile['display_name']
+    raw_name = profile['name']
+    email = profile['email']
     username = _map_email_to_user(raw_username)
     first_name, last_name = _extract_first_last_name(raw_name)
     profile_dict = {
         'username':username,
         'firstName':first_name,
         'lastName':last_name,
-        'email': raw_username,
+        'email': email,
     }
     user = get_or_create_user(username, profile_dict)
     user_token = create_token(user.username, access_token, expiry)
