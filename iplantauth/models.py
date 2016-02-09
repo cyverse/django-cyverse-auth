@@ -184,7 +184,8 @@ def get_or_create_user(username=None, attributes=None):
         # Look for the username "EXACT MATCH"
         user = User.objects.get(username=username)
     except User.DoesNotExist:
-        user = User.objects.create_user(username, "")
+        now = timezone.now()
+        user = User.objects.create_user(username, "", last_login=now)
     if attributes:
         user.first_name = attributes['firstName']
         user.last_name = attributes['lastName']
