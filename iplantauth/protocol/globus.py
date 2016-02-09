@@ -80,6 +80,15 @@ def _extract_first_last_name(user_name):
     split_name = user_name.split()
     return split_name[0], ' '.join(split_name[1:])
 
+def _extract_user_from_email(raw_username):
+    """
+    Usernames come from the globus provider in the form:
+    username@login_authority.com
+    """
+    if not raw_username:
+        return None
+    return raw_username.split('@')[0]
+
 def _map_email_to_user(raw_username):
     """
     Input:  test@fake.com
@@ -162,10 +171,10 @@ def create_user_token_from_globus_profile(profile, access_token):
     expiry = profile['exp'] # This is an 'epoch-int'
     expiry = _extract_expiry_date(expiry)
     issued_at = profile['iat']
-    raw_username = profile['username']
+    raw_username = profile['username']  # username@login_auth.com
     raw_name = profile['name']
     email = profile['email']
-    username = _map_email_to_user(raw_username)
+    username = _extract_user_from_email(raw_username)
     first_name, last_name = _extract_first_last_name(raw_name)
     profile_dict = {
         'username':username,
