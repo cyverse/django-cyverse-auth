@@ -142,7 +142,7 @@ def globus_validate_code(request):
     expiry_date = credentials.token_expiry
     raw_username = token_profile['preferred_username']
     email = token_profile['email']
-    username = _map_email_to_user(raw_username)
+    username = _extract_user_from_email(raw_username)
     if not username:
         logger.info("User %s is not part of the 'valid mapping' and will be skipped!" % raw_username)
         return None

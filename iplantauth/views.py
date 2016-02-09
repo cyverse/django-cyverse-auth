@@ -61,7 +61,7 @@ def o_callback_authorize(request):
     """
     # IF globus --> globus_callback_authorize
     referrer = request.META['HTTP_REFERER']
-    if 'globus' in referrer:
+    if 'globus' in referrer or auth_settings.GLOBUS_AUTH_URL:
         return globus_callback_authorize(request)
     return cas_callback_authorize(request)
 
