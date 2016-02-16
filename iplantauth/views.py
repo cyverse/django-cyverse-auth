@@ -16,7 +16,7 @@ logger = logging.getLogger(__name__)
 from .models import create_token, userCanEmulate
 from .models import Token as AuthToken
 from .protocol.cas import cas_validateUser, cas_loginRedirect, get_cas_oauth_client
-from .protocol.globus import globus_authorize, globus_validate_code
+from .protocol.globus import globus_logout, globus_authorize, globus_validate_code
 from .protocol.ldap import ldap_validate
 from .settings import auth_settings
 
@@ -28,6 +28,12 @@ def globus_login_redirect(request):
     request.session['next'] = next_url
 
     return globus_authorize(request)
+
+def globus_logout_redirect(request):
+    logout_redirect_url = request.GET.get('next', '/application')
+    if 'http' not in logout_redirect_url:
+        logout_redirect_url = settings.SERVER_URL + logout_redirect_url
+    return globus_logout(logout_redirect_url)
 
 def globus_callback_authorize(request):
     """
