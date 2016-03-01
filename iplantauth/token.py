@@ -11,6 +11,7 @@ from requests.exceptions import ConnectionError
 from rest_framework.authentication import BaseAuthentication
 import logging
 logger = logging.getLogger(__name__)
+from .settings import auth_settings
 from .exceptions import Unauthorized
 from .models import Token as AuthToken,\
      create_token
@@ -125,7 +126,7 @@ class JWTTokenAuthentication(TokenAuthentication):
         auth = request.META.get('HTTP_AUTHORIZATION', '').split()
         jwt_assertion = request.META.get('HTTP_ASSERTION')
         if jwt_assertion:
-            sp = WSO2_JWT(settings.JWT_SP_PUBLIC_KEY_FILE)
+            sp = WSO2_JWT(auth_settings.JWT_SP_PUBLIC_KEY_FILE)
             auth_token = sp.create_token_from_jwt(jwt_assertion)
             if auth_token.user.is_active:
                 return (auth_token.user, auth_token)
@@ -267,6 +268,12 @@ def validate_token(token, request=None):
         auth_token = AuthToken.objects.get(key=token)
         user = auth_token.user
     except AuthToken.DoesNotExist:
+        all_backends = settings.AUTHENTICATION_BACKENDS
+        if 'iplantauth.authBackends.MockLoginBackend' in all_backends:
+            logger.info("IGNORED -- AuthToken Retrieved:%s Does not exist. -- Validate anyway (Mock enabled)" % (token,))
+            mock_user = User.objects.get(username=settings.ALWAYS_AUTH_USER)
+            auth_token = AuthToken.objects.create(key=token, user=mock_user)
+            return True
         logger.info("AuthToken Retrieved:%s Does not exist." % (token,))
         return False
     if auth_token.is_expired():
