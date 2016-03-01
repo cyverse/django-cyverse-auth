@@ -50,9 +50,9 @@ auth_settings = ReadOnlyAttrDict(new_settings)
 
 def reload_settings(*args, **kwargs):
     global auth_settings
-    setting_name, value = kwargs['setting'], kwargs['value']
+    setting_name, values = kwargs['setting'], kwargs['value']
     if setting_name == "AUTHENTICATION":
         defaults = DEFAULTS.copy()
-        auth_setings = ReadOnlyAttrDict(defaults.update(values))
+        auth_settings = ReadOnlyAttrDict(defaults.update(values))
 
 setting_changed.connect(reload_settings)
