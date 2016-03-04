@@ -256,7 +256,7 @@ class OAuthTokenLoginBackend(authentication.BaseAuthentication):
             user_token = Token.objects.get(key=access_token)
 
         except Token.DoesNotExist:
-            profile = cas_oauth_client.get_profile(key=access_token)
+            profile = cas_oauth_client.get_profile(access_token=access_token)
             error = profile.get('error')
 
             if error:
