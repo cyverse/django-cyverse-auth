@@ -45,6 +45,8 @@ class AccessToken(models.Model):
         return hashed_val
 
     def get_expired_time(self):
+        if not self.expireTime:
+            return None
         return self.expireTime.strftime("%b %d, %Y %H:%M:%S")
 
     def is_expired(self, now_time=None):
