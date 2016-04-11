@@ -16,7 +16,7 @@ urlpatterns = patterns(
     # CAS Authentication Section:
     #   CAS +OAuth: see 'OAuth Authentication Section'
     #   CAS+SSO:
-    url(r'^CASlogin/(?P<redirect>.*)$', 'iplantauth.protocol.cascas_loginRedirect'),
+    url(r'^CASlogin/(?P<redirect>.*)$', 'iplantauth.protocol.cas.cas_loginRedirect'),
     url(r'^CAS_serviceValidater',
         'iplantauth.protocol.cas.cas_validateTicket',
         name='cas-service-validate-link'),
