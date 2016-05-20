@@ -149,7 +149,7 @@ def create_access_token(token_key, token_expire, issuer):
     return access_token
 
 
-def create_token(username, token_key=None, token_expire=None, issuer=None):
+def create_token(username, token_key=None, token_expire=None, remote_ip=None, issuer=None):
     """
     Generate a Token based on current username
     (And token_key, expiration, issuer.. If available)
@@ -163,6 +163,7 @@ def create_token(username, token_key=None, token_expire=None, issuer=None):
         return None
     auth_user_token, _ = Token.objects.get_or_create(
         key=token_key, user=user, issuer=issuer,
+        remote_ip=remote_ip,
         api_server_url=auth_settings.API_SERVER_URL)
     if token_expire:
         auth_user_token.update_expiration(token_expire)
@@ -235,3 +236,4 @@ def userCanEmulate(username):
         return user.is_staff
     except User.DoesNotExist:
         return False
+
