@@ -129,7 +129,7 @@ def cas_validateTicket(request):
     sendback = request.GET.get('sendback', None)
 
     if not ticket:
-        logger.info("No Ticket received in GET string "
+        logger.warn("No Ticket received in GET string "
                     "-- Logout user: %s" % redirect_logout_url)
         return HttpResponseRedirect(redirect_logout_url)
 
@@ -173,7 +173,7 @@ def cas_validateTicket(request):
         return HttpResponseRedirect(no_user_url)
     auth_token = create_session_token(None, user, request, issuer="CAS")
     if auth_token is None:
-        logger.info("Failed to create AuthToken")
+        logger.warn("Failed to create AuthToken")
         HttpResponseRedirect(redirect_logout_url)
     return_to = request.GET['sendback']
     logger.info("Session token created, User logged in, return to: %s"
@@ -260,7 +260,7 @@ def saml_validateTicket(request):
     ticket = request.GET.get('ticket', None)
 
     if not ticket:
-        logger.info("No Ticket received in GET string "
+        logger.warn("No Ticket received in GET string "
                     "-- Logout user: %s" % redirect_logout_url)
         return HttpResponseRedirect(redirect_logout_url)
 
@@ -283,7 +283,7 @@ def saml_validateTicket(request):
         return HttpResponseRedirect(no_user_url)
     auth_token = create_session_token(None, user, request, issuer="CAS+SAML")
     if auth_token is None:
-        logger.info("Failed to create AuthToken")
+        logger.warn("Failed to create AuthToken")
         HttpResponseRedirect(redirect_logout_url)
     return_to = request.GET.get('sendback')
     if not return_to:
