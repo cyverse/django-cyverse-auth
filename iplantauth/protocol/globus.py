@@ -35,7 +35,7 @@ def globus_initFlow():
         token_uri=auth_settings.GLOBUS_TOKEN_URL)
     return flow
 
-def globus_logout(redirect_uri):
+def globus_logout(redirect_uri, redirect_name='Jetstream'):
     """
     Redirect to logout of globus
     """
@@ -43,7 +43,7 @@ def globus_logout(redirect_uri):
     auth_uri = flow.auth_uri
     web_logout_url = auth_uri.replace('oauth2/authorize', 'web/logout')
     web_logout_url += "?client_id=%s&redirect_name=%s&redirect_uri=%s"\
-            % (flow.client_id, 'Jetstream', redirect_uri)
+            % (flow.client_id, redirect_name, redirect_uri)
     logger.info(web_logout_url)
     return HttpResponseRedirect(web_logout_url)
 
