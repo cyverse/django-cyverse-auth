@@ -30,7 +30,7 @@ class AccessToken(models.Model):
     AccessTokens are long running tokens
     at most ONE access token should be active per issuer
     """
-    key = models.CharField(max_length=1024, primary_key=True)
+    key = models.CharField(max_length=255, primary_key=True)
     issuer = models.TextField(null=True, blank=True)
     expireTime = models.DateTimeField(null=True, blank=True)
 
@@ -68,9 +68,9 @@ class Token(models.Model):
     AuthTokens are issued (or reused if existing)
     each time a user asks for a token using CloudAuth
     """
-    key = models.CharField(max_length=1024, primary_key=True)
+    key = models.CharField(max_length=255, primary_key=True)
     user = models.ForeignKey(AUTH_USER_MODEL, related_name='auth_tokens')
-    api_server_url = models.CharField(max_length=256, null=True, blank=True)
+    api_server_url = models.CharField(max_length=255, null=True, blank=True)
     remote_ip = models.CharField(max_length=128, null=True, blank=True)
     issuer = models.TextField(null=True, blank=True)
     issuedTime = models.DateTimeField(auto_now_add=True)
