@@ -8,8 +8,8 @@ from rest_framework import status
 import logging
 logger = logging.getLogger(__name__)
 
-from .protocol.cas import cas_loginRedirect
 from .token import validate_token
+from .views import login_redirect
 
 
 def atmo_login_required(func):
@@ -60,7 +60,7 @@ def atmo_login_required(func):
                             request=request)
         if not user:
             logger.info("Could not authenticate user %s" % username)
-            return cas_loginRedirect(request, redirect)
+            return login_redirect(request, redirect)
         django_login(request, user)
         return func(request, *args, **kwargs)
     return atmo_login

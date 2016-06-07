@@ -72,6 +72,15 @@ def o_callback_authorize(request):
     return cas_callback_authorize(request)
 
 
+def login_redirect(request, redirect_to):
+    all_backends = settings.AUTHENTICATION_BACKENDS
+    if 'iplantauth.authBackends.CASLoginBackend' in all_backends:
+        return cas_loginRedirect(request, redirect_to)
+    else:
+        return HttpResponseRedirect(redirect_to)
+
+
+
 def o_login_redirect(request):
     oauth_client = get_cas_oauth_client()
     url = oauth_client.authorize_url()
