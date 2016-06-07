@@ -40,15 +40,15 @@ def atmo_login_required(func):
         username = request.session.get('username', None)
         token = request.session.get('token', None)
         redirect = kwargs.get('redirect', request.get_full_path())
-        emulator = request.session.get('emulated_by', None)
-
-        if emulator:
+        emulator = request.session.get('emulator', None)
+        emulator_token = request.session.get('emulator_token', None)
+        if emulator and emulator_token:
             logger.info("Test emulator %s instead of %s" %
                         (emulator, username))
             logger.debug(request.session.__dict__)
             # Authenticate the user (Force a CAS test)
             user = authenticate(username=emulator, password="",
-                                auth_token=token, request=request)
+                                auth_token=emulator_token, request=request)
             # AUTHORIZED STAFF ONLY
             if not user or not user.is_staff:
                 return HttpResponseRedirect(auth_settings.SERVER_URL + "/logout/")
