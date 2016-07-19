@@ -13,6 +13,30 @@ import logging
 logger = logging.getLogger(__name__)
 
 
+
+def _get_uid_number(userid):
+    """
+    Get uidNumber
+    """
+    try:
+        conn = ldap_driver.initialize(auth_settings.LDAP_SERVER)
+        attr = conn.search_s(auth_settings.LDAP_SERVER_DN,
+                             ldap_driver.SCOPE_SUBTREE,
+                             "(uid=%s)" % userid)
+        uid_number = int(attr[0][1]["uidNumber"][0])
+        if uid_number > 10000:
+            uid_number -= 10000
+        return uid_number
+    except IndexError:
+        logger.warn("Error - User %s does not exist" % userid)
+        return None
+    except Exception as e:
+        logger.warn(
+            "Error occurred getting user uidNumber for user: %s" %
+            userid)
+        logger.exception(e)
+        return None
+
 def _search_ldap(userid, conn=None):
     try:
         if not conn:
