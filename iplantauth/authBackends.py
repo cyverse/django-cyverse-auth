@@ -128,6 +128,8 @@ class AuthTokenLoginBackend(ModelBackend):
     AuthenticationBackend for OAuth authorizations
     (Authorize user from Third party (web) clients via OAuth)
     """
+    def __init__(self, *args, **kwargs):
+        super(AuthTokenLoginBackend, self).__init__(*args, **kwargs)
 
     def authenticate(self, username=None, password=None, auth_token=None,
                      request=None):
