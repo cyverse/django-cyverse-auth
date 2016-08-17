@@ -53,7 +53,7 @@ def globus_authorize(request):
     """
     flow = globus_initFlow()
     auth_uri = flow.step1_get_authorize_url()
-    auth_uri += '&authentication_hint=xsede'
+    auth_uri += '&authentication_hint=36007761-2cf2-4e74-a068-7473afc1d054'
     auth_uri = auth_uri.replace('access_type=offline','access_type=online')
     logger.warn(auth_uri)
     return HttpResponseRedirect(auth_uri)
