@@ -147,6 +147,9 @@ def globus_validate_code(request):
     except OAuthError as err:
         logger.exception("Error exchanging code w/ globus")
         return None
+    except Exception as err:
+        logger.exception("Unknown Error occurred while exchanging code w/ globus")
+        return None
     # Parsing
     token_profile = credentials.id_token
     user_access_token = credentials.access_token
