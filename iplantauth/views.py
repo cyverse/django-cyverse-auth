@@ -66,7 +66,7 @@ def o_callback_authorize(request):
     ( Uses request.META to route which IdP is in use )
     """
     # IF globus --> globus_callback_authorize
-    referrer = request.META['HTTP_REFERER']
+    referrer = request.META.get('HTTP_REFERER','no-referrer')
     if 'globus' in referrer or auth_settings.GLOBUS_AUTH_URL:
         return globus_callback_authorize(request)
     return cas_callback_authorize(request)
