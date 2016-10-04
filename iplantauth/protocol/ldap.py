@@ -6,7 +6,7 @@ from iplantauth.settings import auth_settings
 import string
 
 from django.core.handlers.wsgi import WSGIRequest
-
+from django.utils import timezone
 import ldap as ldap_driver
 
 import logging
@@ -72,13 +72,37 @@ def getAllUsers():
         return None
 
 
+def user_expiry_stats(profile):
+    try:
+        change = profile['shadowLastChange'][0]
+        max_val = profile['shadowMax'][0]
+        warn = profile['shadowWarning'][0]
+    except (KeyError, IndexError):
+        pass
+
+    epoch = timezone.datetime(1970, 1, 1)
+    chgdate = epoch + timezone.timedelta(days=int(change))
+    expiry_date = chgdate+timezone.timedelta(days=int(max_val))
+    warndate = expiry_date+timezone.timedelta(days=-int(warn))
+
+    if chgdate == epoch:
+        logger.warn("Could not calculate an expiration for user %s" % username)
+    return {
+        'last_changed': chgdate,
+        'expires_on': expiry_date,
+        'warn_user_on': warndate
+    }
+
+
 def lookupUser(userid):
     """
     Grabs email for the user based on LDAP attrs
     """
     try:
-        attr = _search_ldap(userid)
-        user_attrs = attr[0][1]
+        results = _search_ldap(userid)
+        user_dn, user_attrs = results[0]
+        expiry_dict = user_expiry_stats(user_attrs)
+        user_attrs.update({'expiry': expiry_dict})
         return user_attrs
     except Exception as e:
         logger.warn("Error occurred looking up user: %s" % userid)
