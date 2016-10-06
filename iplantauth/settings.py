@@ -16,6 +16,8 @@ USER_SETTINGS = getattr(settings, 'AUTHENTICATION', {})
 
 DEFAULTS =  {
     # General
+    "APP_NAME": "Iplantauth Application",
+    "SITE_NAME": "",
     "TOKEN_EXPIRY_TIME": timedelta(days=1),
     "CAS_SERVER": None,
     "API_SERVER_URL": None,

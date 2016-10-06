@@ -19,6 +19,7 @@ from .protocol.cas import cas_validateUser, cas_loginRedirect, get_cas_oauth_cli
 from .protocol.globus import globus_logout, globus_authorize, globus_validate_code
 from .protocol.ldap import ldap_validate
 from .settings import auth_settings
+from .exceptions import Unauthorized
 
 #GLOBUS Views
 
@@ -41,7 +42,16 @@ def globus_callback_authorize(request):
     May need to refactor this...
     """
     code = request.GET.get('code')
-    user_token = globus_validate_code(request)
+    try:
+        user_token = globus_validate_code(request)
+    except Unauthorized as bad_code:
+        logger.exception("Globus login failed to validate code: %s" % bad_code)
+        app_name = auth_settings.APP_NAME
+        site_name = auth_settings.SITE_NAME
+        return HttpResponse(
+            "In order to use %s you must consent to "
+            "releasing your identity details from Globus to %s."
+            % (app_name, site_name), status=401)
     if not user_token:
         # Redirect out of the OAuth loop
         return HttpResponseRedirect(auth_settings.LOGOUT_REDIRECT_URL)
