@@ -150,7 +150,7 @@ class AuthTokenLoginBackend(ModelBackend):
             "[AUTHTOKEN] Valid Token %s (User:%s)"
             % (valid_token.key, valid_token.user))
         valid_user = valid_token.user
-        return get_or_create_user(valid_user.username, None)
+        return get_or_create_user(valid_user.username, {})
 
 #### Troposphere needs
 

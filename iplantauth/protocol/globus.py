@@ -12,6 +12,7 @@ from iplantauth.models import (
     get_or_create_user, create_token,
     create_access_token, get_access_token)
 from iplantauth.settings import auth_settings
+from iplantauth.exceptions import Unauthorized
 
 import logging
 logger = logging.getLogger(__name__)
@@ -134,9 +135,14 @@ def globus_validate_code(request):
     If valid: Return new AuthToken to be passed to the Resource Provider.
         else: Return None
     """
-    code = request.GET['code']
+    code = request.GET.get('code','')
+    error = request.GET.get('error','')
+    error_description = request.GET.get('error_description','')
+    if error:
+        error_msg = "%s: %s" % (error, error_description) if error_description else error
+        raise Unauthorized(error_msg)
     if not code:
-        #raise Exception("NO Code found!")
+        logger.warn("User returned from Login prompt but there was NO `code` to validate!")
         return None
     if type(code) == list:
         code = code[0]

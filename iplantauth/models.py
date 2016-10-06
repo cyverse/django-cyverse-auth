@@ -171,7 +171,7 @@ def create_token(username, token_key=None, token_expire=None, remote_ip=None, is
     return auth_user_token
 
 
-def get_or_create_user(username=None, attributes=None):
+def get_or_create_user(username=None, attributes={}):
     """
     Retrieve or create a User matching the username (No password)
     """
@@ -189,9 +189,11 @@ def get_or_create_user(username=None, attributes=None):
     except User.DoesNotExist:
         now = timezone.now()
         user = User.objects.create_user(username, "", last_login=now)
-    if attributes:
+    if attributes.get('firstName'):
         user.first_name = attributes['firstName']
+    if attributes.get('lastName'):
         user.last_name = attributes['lastName']
+    if attributes.get('email'):
         user.email = attributes['email']
     user.save()
     return user
