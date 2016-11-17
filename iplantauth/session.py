@@ -19,4 +19,5 @@ def create_session_token(sender, user, request, issuer="Django-Session", **kwarg
 
 
 # Instantiate the login hook here.
+# TODO: Investigate if this is the cause of 'the atmoadmin bug'
 user_logged_in.connect(create_session_token)

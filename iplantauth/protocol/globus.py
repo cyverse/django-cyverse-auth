@@ -9,7 +9,7 @@ from oauth2client.client import OAuth2WebServerFlow
 from oauth2client.client import Error as OAuthError
 
 from iplantauth.models import (
-    get_or_create_user, create_token,
+    get_or_create_user, create_user_and_token,
     create_access_token, get_access_token)
 from iplantauth.settings import auth_settings
 from iplantauth.exceptions import Unauthorized
@@ -164,20 +164,20 @@ def globus_validate_code(request):
     email = token_profile['email']
     username = _extract_user_from_email(raw_username)
     if not username:
-        logger.info("User %s is not part of the 'valid mapping' and will be skipped!" % raw_username)
+        logger.info("No user provided in token_profile: Check output %s" % token_profile)
         return None
     full_name = token_profile['name']
     issuer = token_profile['iss']
     # Creation
     first_name, last_name = _extract_first_last_name(full_name)
+    username = username.lower()
     user_profile = {
         'username':username,
         'firstName':first_name,
         'lastName':last_name,
         'email': email,
     }
-    user = get_or_create_user(username, user_profile)
-    auth_token = create_token(username, user_access_token, expiry_date, issuer)
+    auth_token = create_user_and_token(user_profile, user_access_token, expiry_date, issuer)
     return auth_token
 
 def create_user_token_from_globus_profile(profile, access_token):
@@ -190,6 +190,7 @@ def create_user_token_from_globus_profile(profile, access_token):
     logger.info(profile)
     expiry = profile['exp'] # This is an 'epoch-int'
     expiry = _extract_expiry_date(expiry)
+    issuer = token_profile['iss']
     issued_at = profile['iat']
     raw_username = profile['username']  # username@login_auth.com
     raw_name = profile['name']
@@ -202,7 +203,6 @@ def create_user_token_from_globus_profile(profile, access_token):
         'lastName':last_name,
         'email': email,
     }
-    user = get_or_create_user(username, profile_dict)
-    user_token = create_token(user.username, access_token, expiry)
-    return user_token
+    auth_token = create_user_and_token(profile_dict, access_token, expiry, issuer)
+    return auth_token
 

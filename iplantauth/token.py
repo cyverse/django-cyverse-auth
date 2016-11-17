@@ -14,7 +14,7 @@ logger = logging.getLogger(__name__)
 from .settings import auth_settings
 from .exceptions import Unauthorized
 from .models import Token as AuthToken,\
-     create_token
+     create_user_and_token
 from .models import get_or_create_user
 from .protocol.cas import cas_validateUser
 from .protocol.cas import cas_profile_for_token
@@ -214,6 +214,8 @@ class OAuthTokenAuthentication(TokenAuthentication):
                 if token and token.user.is_active:
                     return (token.user, token)
         return None
+
+
 def validate_oauth_token(token, request=None):
     """
     Validates the token attached to the request (SessionStorage, GET/POST)
@@ -230,29 +232,20 @@ def validate_oauth_token(token, request=None):
         return False
     username = user_profile.get("id")
     if not username:
-        # logger.info("Invalid Profile:%s does not have username/attributes"
-        #            % user_profile)
+        logger.warn("Invalid Profile:%s does not have username/attributes"
+                   % user_profile)
         return False
-
-    # NOTE: REMOVE this when it is no longer true!
-    # Force any username lookup to be in lowercase
-    if not username:
-        return None
+    #CAS specific, converts [{u'lastName': u'Doe'}, {u'firstName': u'John'}] to {u'lastName': u'doe', u'firstName': u'John'}
+    profile_attrs = { c.keys()[0]: c.values()[0] for c in user_profile.get('attributes', []) }
     username = username.lower()
+    new_profile = {
+        'username': username,
+        'firstName': profile_attrs['firstName'],
+        'lastName': profile_attrs['lastName'],
+        'email': profile_attrs['email']
+    }
+    return create_user_and_token(new_profile, token)
 
-    # TEST 1 : Must be in the group 'atmo-user'
-    # NOTE: Test 1 will be IGNORED until we can verify it returns 'entitlement'
-    # EVERY TIME!
-    #    raise Unauthorized("User %s is not a member of group 'atmo-user'"
-    #                       % username)
-    # TODO: TEST 2 : Must have an identity (?)
-    if not User.objects.filter(username=username):
-        raise Unauthorized("User %s does not exist as an User"
-                           % username)
-    auth_token = create_token(username, token)
-    if not auth_token:
-        return False
-    return True
 
 
 def validate_token(token, request=None):

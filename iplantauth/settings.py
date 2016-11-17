@@ -47,6 +47,8 @@ class ReadOnlyAttrDict(dict):
 
 new_settings = DEFAULTS.copy()
 new_settings.update(USER_SETTINGS)
+
+
 auth_settings = ReadOnlyAttrDict(new_settings)
 
 
@@ -58,3 +60,5 @@ def reload_settings(*args, **kwargs):
         auth_settings = ReadOnlyAttrDict(defaults.update(values))
 
 setting_changed.connect(reload_settings)
+
+__all__ = ('auth_settings', )

@@ -149,6 +149,18 @@ def create_access_token(token_key, token_expire, issuer):
     return access_token
 
 
+def create_user_and_token(user_profile, token_key, token_expire=None, remote_ip=None, issuer=None):
+    """
+    Given a user_profile (minimally) containing the keys: ['username', 'firstName', 'lastName', 'email'] and (optionally) a token UUID
+    Create the user
+    Create token for user
+    return token
+    """
+    get_or_create_user(user_profile['username'], user_profile)
+    auth_token = create_token(user_profile['username'], token_key, token_expire, remote_ip, issuer)
+    return auth_token
+
+
 def create_token(username, token_key=None, token_expire=None, remote_ip=None, issuer=None):
     """
     Generate a Token based on current username
