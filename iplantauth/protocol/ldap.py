@@ -73,20 +73,24 @@ def getAllUsers():
 
 
 def user_expiry_stats(profile):
+    epoch = timezone.datetime(1970, 1, 1)
     try:
+        username = profile['uid'][0]
         change = profile['shadowLastChange'][0]
         max_val = profile['shadowMax'][0]
         warn = profile['shadowWarning'][0]
+
+        chgdate = epoch + timezone.timedelta(days=int(change))
+        expiry_date = chgdate+timezone.timedelta(days=int(max_val))
+        warndate = expiry_date+timezone.timedelta(days=-int(warn))
+
+        if chgdate == epoch:
+            logger.warn("Could not calculate an expiration for user %s" % username)
     except (KeyError, IndexError):
-        pass
-
-    epoch = timezone.datetime(1970, 1, 1)
-    chgdate = epoch + timezone.timedelta(days=int(change))
-    expiry_date = chgdate+timezone.timedelta(days=int(max_val))
-    warndate = expiry_date+timezone.timedelta(days=-int(warn))
-
-    if chgdate == epoch:
-        logger.warn("Could not calculate an expiration for user %s" % username)
+        logger.warn("Could not calculate an expiration for profile %s" % profile)
+        chgdate = epoch
+        warndate = epoch
+        expiry_date = timezone.datetime.max
     return {
         'last_changed': chgdate,
         'expires_on': expiry_date,
