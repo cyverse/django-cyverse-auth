@@ -69,7 +69,7 @@ def cas_validateUser(username):
     and see if we can reauthenticate the user.
     """
     try:
-        userProxy = UserProxy.objects.filter(username=username).latest('pk')  # TODO: FIX!!
+        userProxy = UserProxy.objects.filter(username=username).order_by('pk').first()
         logger.debug("[CAS] Validation Test - %s" % username)
         if userProxy is None:
             logger.debug("User %s does not have a proxy" % username)
