@@ -1,7 +1,8 @@
-# django-iplant-auth
+# django-cyverse-auth
+_Formerly, django-iplant-auth_
 
 A django 'app' that provides easy compatibility with
-all current iPlant Auth schemes.
+all current CyVerse Auth schemes.
 
 This app works for both 'resource provider' and 'client'
 
