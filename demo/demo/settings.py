@@ -37,8 +37,8 @@ INSTALLED_APPS = (
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    # The 'iplantauth' app must be included as an installed_app
-    'iplantauth',
+    # The 'django_cyverse_auth' app must be included as an installed_app
+    'django_cyverse_auth',
 )
 
 MIDDLEWARE_CLASSES = (

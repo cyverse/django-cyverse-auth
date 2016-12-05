@@ -2,7 +2,7 @@
 LDAP authentication methods
 """
 from __future__ import absolute_import
-from iplantauth.settings import auth_settings
+from django_cyverse_auth.settings import auth_settings
 import string
 
 from django.core.handlers.wsgi import WSGIRequest

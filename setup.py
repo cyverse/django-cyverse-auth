@@ -6,7 +6,7 @@ import shutil
 
 from setuptools import setup, find_packages
 
-from iplantauth import __version__
+from django_cyverse_auth import __version__
 
 
 requirements = open("requirements.txt").read()
@@ -26,26 +26,27 @@ if sys.argv[-1] == 'publish':
     print("  git push --tags")
     shutil.rmtree('dist')
     shutil.rmtree('build')
-    shutil.rmtree('django_iplant_auth.egg-info')
+    shutil.rmtree('django_cyverse_auth.egg-info')
     sys.exit()
 
 
 setup(
-    name='django-iplant-auth',
+    name='django-cyverse-auth',
     version=__version__,
-    author='iPlantCollaborative',
+    author='CyVerse',
     author_email='atmodevs@gmail.com',
-    description="Authentication support for iPlantCollaborative.",
+    description="Authentication support for CyVerse Django applications.",
     install_requires=requirements,
     license="BSD License, 3 clause",
     packages=find_packages(),
-    url="https://github.com/iPlantCollaborativeOpenSource/django-iplant-auth",
+    url="https://github.com/CyVerse/django-cyverse-auth",
     classifiers=[
-        "Development Status :: 3 - Alpha",
+        "Development Status :: 4 - Beta",
         "Environment :: Web Environment",
         "Framework :: Django",
         "Framework :: Django :: 1.7",
         "Framework :: Django :: 1.8",
+        "Framework :: Django :: 1.9",
         "Intended Audience :: Developers",
         "Intended Audience :: Information Technology",
         "License :: OSI Approved :: BSD License",
@@ -53,5 +54,6 @@ setup(
         "Operating System :: OS Independent",
         "Programming Language :: Python",
         "Topic :: Software Development :: Libraries",
-        "Topic :: System :: Systems Administration"
+        "Topic :: System :: Systems Administration",
+        "Topic :: System :: Systems Administration :: Authentication/Directory"
     ])

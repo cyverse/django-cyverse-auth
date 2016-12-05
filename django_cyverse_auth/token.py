@@ -203,7 +203,7 @@ class OAuthTokenAuthentication(TokenAuthentication):
         auth = request.META.get('HTTP_AUTHORIZATION', '').split()
         if len(auth) == 2 and auth[0].lower() == "token":
             oauth_token = auth[1]
-            if 'iplantauth.authBackends.MockLoginBackend' in all_backends:
+            if 'django_cyverse_auth.authBackends.MockLoginBackend' in all_backends:
                 user, token = self._mock_oauth_login(oauth_token)
                 return (user, token)
             if validate_oauth_token(oauth_token):
@@ -264,7 +264,7 @@ def validate_token(token, request=None):
         user = auth_token.user
     except AuthToken.DoesNotExist:
         all_backends = settings.AUTHENTICATION_BACKENDS
-        if 'iplantauth.authBackends.MockLoginBackend' in all_backends:
+        if 'django_cyverse_auth.authBackends.MockLoginBackend' in all_backends:
             logger.info("IGNORED -- AuthToken Retrieved:%s Does not exist. -- Validate anyway (Mock enabled)" % (token,))
             mock_user, _ = User.objects.get_or_create(username=settings.ALWAYS_AUTH_USER)
             auth_token = AuthToken.objects.create(key=token, user=mock_user)

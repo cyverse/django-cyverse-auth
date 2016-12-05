@@ -8,11 +8,11 @@ from django.utils import timezone
 from oauth2client.client import OAuth2WebServerFlow
 from oauth2client.client import Error as OAuthError
 
-from iplantauth.models import (
+from django_cyverse_auth.models import (
     get_or_create_user, create_user_and_token,
     create_access_token, get_access_token)
-from iplantauth.settings import auth_settings
-from iplantauth.exceptions import Unauthorized
+from django_cyverse_auth.settings import auth_settings
+from django_cyverse_auth.exceptions import Unauthorized
 
 import logging
 logger = logging.getLogger(__name__)

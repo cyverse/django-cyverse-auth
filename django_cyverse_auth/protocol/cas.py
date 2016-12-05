@@ -17,9 +17,9 @@ from caslib import CASClient, SAMLClient, OAuthClient
 import logging
 logger = logging.getLogger(__name__)
 
-from iplantauth.session import create_session_token
-from iplantauth.settings import auth_settings
-from iplantauth.models import UserProxy
+from django_cyverse_auth.session import create_session_token
+from django_cyverse_auth.settings import auth_settings
+from django_cyverse_auth.models import UserProxy
 
 ###########################
 # CAS-SPECIFIC SSO METHODS
@@ -109,7 +109,7 @@ def cas_updateUserProxy(user, pgtIou, max_try=3):
 
 def cas_set_redirect_url(sendback, request):
     absolute_url = request.build_absolute_uri(
-        reverse('iplantauth:cas-service-validate-link'))
+        reverse('django_cyverse_auth:cas-service-validate-link'))
     return "%s?sendback=%s" % (absolute_url, sendback)
 
 

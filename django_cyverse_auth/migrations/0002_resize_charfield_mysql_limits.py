@@ -7,7 +7,7 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('iplantauth', '0001_initial'),
+        ('django_cyverse_auth', '0001_initial'),
     ]
 
     operations = [

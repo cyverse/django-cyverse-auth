@@ -84,7 +84,7 @@ def o_callback_authorize(request):
 
 def login_redirect(request, redirect_to):
     all_backends = settings.AUTHENTICATION_BACKENDS
-    if 'iplantauth.authBackends.CASLoginBackend' in all_backends:
+    if 'django_cyverse_auth.authBackends.CASLoginBackend' in all_backends:
         return cas_loginRedirect(request, redirect_to)
     else:
         return HttpResponseRedirect(redirect_to)
