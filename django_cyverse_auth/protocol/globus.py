@@ -206,7 +206,7 @@ def create_user_token_from_globus_profile(profile, access_token):
     logger.info(profile)
     expiry = profile['exp'] # This is an 'epoch-int'
     expiry = _extract_expiry_date(expiry)
-    issuer = token_profile['iss']
+    issuer = profile['iss']
     issued_at = profile['iat']
     raw_username = profile['username']  # username@login_auth.com
     raw_name = profile['name']
