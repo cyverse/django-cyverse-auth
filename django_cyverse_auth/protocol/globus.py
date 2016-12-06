@@ -127,6 +127,17 @@ def _map_email_to_user(raw_username):
     return username
 
 
+def parse_atmosphere_token(token_response):
+    atmosphere_scope = auth_settings.get('GLOBUS_OAUTH_ATMOSPHERE_SCOPE', 'urn:globus:auth:scope:use.jetstream-cloud.org:all')
+    atmosphere_scope = atmosphere_scope.replace('openid email profile ','').strip()
+    tokens = token_response.pop('other_tokens', [])
+    tokens.append(token_response)
+    for token in tokens:
+        #FIXME: Make this a specific setting, rather than hard-coded.
+        if token['scope'] == atmosphere_scope:
+            return token['access_token']
+    raise Exception("Globus token valid -- Could not find a token with atmosphere scope %s" % atmosphere_scope)
+
 def globus_validate_code(request):
     """
     This flow is used to create a new Token on behalf of a Service Client
@@ -157,8 +168,12 @@ def globus_validate_code(request):
         logger.exception("Unknown Error occurred while exchanging code w/ globus")
         return None
     # Parsing
+    try:
+        user_access_token = parse_atmosphere_token(credentials.token_response)
+    except Exception as err:
+        logger.exception("Parse of the credentials response failed. Ask a developer for help!")
+        return None
     token_profile = credentials.id_token
-    user_access_token = credentials.access_token
     expiry_date = credentials.token_expiry
     raw_username = token_profile['preferred_username']
     email = token_profile['email']
