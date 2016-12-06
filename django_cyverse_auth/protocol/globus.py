@@ -33,6 +33,7 @@ def globus_initFlow():
         authorization_header=auth_header,
         redirect_uri=auth_settings.OAUTH_CLIENT_CALLBACK,
         auth_uri=auth_settings.GLOBUS_AUTH_URL,
+        token_info_uri=auth_settings.GLOBUS_TOKENINFO_URL,
         token_uri=auth_settings.GLOBUS_TOKEN_URL)
     return flow
 
@@ -170,11 +171,11 @@ def globus_validate_code(request):
     # Parsing
     try:
         user_access_token = parse_atmosphere_token(credentials.token_response)
+        token_profile = credentials.id_token
+        expiry_date = credentials.token_expiry
     except Exception as err:
         logger.exception("Parse of the credentials response failed. Ask a developer for help!")
         return None
-    token_profile = credentials.id_token
-    expiry_date = credentials.token_expiry
     raw_username = token_profile['preferred_username']
     email = token_profile['email']
     username = _extract_user_from_email(raw_username)
