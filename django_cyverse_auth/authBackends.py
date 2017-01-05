@@ -5,6 +5,10 @@ from django.contrib.auth.backends import ModelBackend
 from django.conf import settings
 from django.contrib.auth import get_user_model
 
+from keystoneauth1.identity import v3
+from keystoneauth1 import session
+from keystoneclient.v3 import client
+
 
 from .settings import auth_settings
 from .models import get_or_create_user
