@@ -277,3 +277,37 @@ class MockLoginBackend(authentication.BaseAuthentication):
             return User.objects.get(pk=user_id)
         except User.DoesNotExist:
             return None
+
+
+class KeystoneLoginBackend(authentication.BaseAuthentication):
+    """
+    Keystone Auth Login for OpenStack
+    """
+    def authenticate(self, username, password, request=None):
+        auth_url = setttings.AUTH_URL
+        unscoped_auth=v3.Password(username=username,password=password,auth_url=auth_url,user_domain_name="Default",unscoped=True)
+        unscoped_sess=session.Session(auth=unscoped_auth)
+        try:
+            unscoped_token=unscoped_sess.get_token()
+            try:
+                auth=v3.Token(auth_url=auth_url,token=unscoped_token)
+                sess=session.Session(auth=auth)
+                scoped_token=sess.get_token()
+                return get_or_create_user(username, {
+                    'username': username,
+                    'firstName': "firstname",
+                    'lastName': "lastName",
+                    'email': "email",
+                    'entitlement': []
+                })
+            except:
+                return None
+        except:
+            return None
+
+    def get_user(self, user_id):
+        User = get_user_model()
+        try:
+            return User.objects.get(pk=user_id)
+        except User.DoesNotExist:
+            return None
