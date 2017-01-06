@@ -177,6 +177,7 @@ def create_token(username, token_key=None, token_expire=None, remote_ip=None, is
         key=token_key, user=user, issuer=issuer,
         remote_ip=remote_ip,
         api_server_url=auth_settings.API_SERVER_URL)
+    logger.info("Created new token - %s" % token_key)
     if token_expire:
         auth_user_token.update_expiration(token_expire)
         auth_user_token.save()
