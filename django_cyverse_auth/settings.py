@@ -27,6 +27,9 @@ DEFAULTS =  {
     "OAUTH_CLIENT_SECRET": None,
     "OAUTH_CLIENT_CALLBACK": None,
 
+    # KEYSTONE
+    "KEYSTONE_SERVER": None,
+    "KEYSTONE_DOMAIN_NAME": "Default",
     # LDAP
     "LDAP_SERVER": None,
     "LDAP_SERVER_DN": None,
