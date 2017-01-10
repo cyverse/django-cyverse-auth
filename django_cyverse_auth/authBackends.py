@@ -1,9 +1,15 @@
 """
 Authentication Backends and validation methods
 """
+from urlparse import urlparse
+
 from django.contrib.auth.backends import ModelBackend
 from django.conf import settings
 from django.contrib.auth import get_user_model
+
+from keystoneauth1.identity import v3
+from keystoneauth1 import session
+from keystoneclient.v3 import client
 
 
 from .settings import auth_settings
@@ -272,6 +278,47 @@ class MockLoginBackend(authentication.BaseAuthentication):
         """
         Get a User object from the username.
         """
+        User = get_user_model()
+        try:
+            return User.objects.get(pk=user_id)
+        except User.DoesNotExist:
+            return None
+
+
+class KeystoneLoginBackend(authentication.BaseAuthentication):
+    """
+    Keystone Auth Login for OpenStack
+    """
+    def authenticate(self, username, password, request=None):
+        auth_url = auth_settings.KEYSTONE_SERVER
+        user_domain_name  = auth_settings.KEYSTONE_DOMAIN_NAME
+        parsed_auth_url = urlparse(auth_url)
+        hostname = parsed_auth_url.hostname
+        unscoped_auth=v3.Password(username=username,password=password,auth_url=auth_url,user_domain_name=user_domain_name, unscoped=True)
+        unscoped_sess=session.Session(auth=unscoped_auth)
+        try:
+            unscoped_token=unscoped_sess.get_token()
+            try:
+                auth=v3.Token(auth_url=auth_url,token=unscoped_token)
+                sess=session.Session(auth=auth)
+                scoped_token=sess.get_token()
+                # Without modification of OpenStack's default user-role permissions,
+                # it is impossible to introspect further for user information.
+                # As a result, any accounts created this way will not have a valid: [firstName, lastName, email] attribute.
+                # Openstack only stores e-mail, anyway...
+                return get_or_create_user(username, {
+                    'username': username,
+                    'firstName': username,
+                    'lastName': "",
+                    'email': "%s@%s" % (username, hostname),
+                    'entitlement': []
+                })
+            except:
+                return None
+        except:
+            return None
+
+    def get_user(self, user_id):
         User = get_user_model()
         try:
             return User.objects.get(pk=user_id)
