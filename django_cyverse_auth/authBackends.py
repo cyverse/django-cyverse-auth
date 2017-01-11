@@ -296,7 +296,6 @@ class OpenstackLoginBackend(authentication.BaseAuthentication):
             project_name = username
 
         auth_url = auth_settings.KEYSTONE_SERVER
-        import ipdb;ipdb.set_trace()
 
         driver = OpenStackIdentity_3_0_Connection(auth_url=auth_url+"/auth/tokens", user_id=username, key=password, token_scope=OpenStackIdentityTokenScope.PROJECT, tenant_name=project_name)
 
