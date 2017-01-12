@@ -7,6 +7,8 @@ from django.contrib.auth.backends import ModelBackend
 from django.conf import settings
 from django.contrib.auth import get_user_model
 
+from libcloud.common.openstack_identity import OpenStackIdentity_3_0_Connection, OpenStackIdentityTokenScope
+
 from keystoneauth1.identity import v3
 from keystoneauth1 import session
 from keystoneclient.v3 import client
@@ -285,9 +287,40 @@ class MockLoginBackend(authentication.BaseAuthentication):
             return None
 
 
+class OpenstackLoginBackend(authentication.BaseAuthentication):
+    """
+    Libcloud OpenstackIdentity 3.0 Login for Atmosphere
+    """
+    def authenticate(self, username, password, project_name=None, request=None):
+        if not project_name:
+            project_name = username
+
+        auth_url = auth_settings.KEYSTONE_SERVER
+
+        driver = OpenStackIdentity_3_0_Connection(auth_url=auth_url+"/auth/tokens", user_id=username, key=password, token_scope=OpenStackIdentityTokenScope.PROJECT, tenant_name=project_name)
+
+        try:
+            conn = driver.authenticate()
+            auth_token = driver.auth_token
+            if request:
+                request.session['token_key'] = auth_token
+        except:
+            return None
+
+        parsed_auth_url = urlparse(auth_url)
+        hostname = parsed_auth_url.hostname
+
+        return get_or_create_user(username, {
+            'username': username,
+            'firstName': username,
+            'lastName': "",
+            'email': "%s@%s" % (username, hostname),
+            'entitlement': []
+        })
+
 class KeystoneLoginBackend(authentication.BaseAuthentication):
     """
-    Keystone Auth Login for OpenStack
+    Keystone Auth Login for Atmosphere
     """
     def authenticate(self, username, password, request=None):
         auth_url = auth_settings.KEYSTONE_SERVER
