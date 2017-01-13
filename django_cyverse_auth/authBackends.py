@@ -297,6 +297,8 @@ class OpenstackLoginBackend(ModelBackend):
 
         if not auth_url:
             auth_url = auth_settings.KEYSTONE_SERVER
+        if '/v' not in auth_url:
+            auth_url += "/v3"  # Assume v3
 
         driver = OpenStackIdentity_3_0_Connection(auth_url=auth_url+"/auth/tokens", user_id=username, key=password, token_scope=OpenStackIdentityTokenScope.PROJECT, tenant_name=project_name)
 
