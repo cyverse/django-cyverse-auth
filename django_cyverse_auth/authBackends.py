@@ -161,9 +161,10 @@ def create_user_token_from_cas_profile(profile, access_token):
     user_token = Token.objects.create(key=access_token, user=user)
     return user_token
 
-def generate_token(user):
-    access_token = uuid4()
-    user_token = Token.objects.create(user=user, key=str(access_token))
+def generate_token(user, issued_token=None):
+    if not issued_token:
+        issued_token = uuid4()
+    user_token = Token.objects.create(user=user, key=str(issued_token))
     return user_token
 
 
