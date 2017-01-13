@@ -5,6 +5,7 @@ jwt.py
 python-ldap
 requests
 threepio
+apache-libcloud
 
 # For developers -- Uncomment
 # twine
