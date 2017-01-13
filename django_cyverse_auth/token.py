@@ -21,6 +21,8 @@ from .protocol.cas import cas_profile_for_token
 from .protocol.globus import globus_profile_for_token, create_user_token_from_globus_profile
 from .protocol.wso2 import WSO2_JWT
 
+from libcloud.common.openstack_identity import OpenStackIdentity_3_0_Connection, OpenStackIdentityTokenScope
+
 User = get_user_model()
 
 def getRequestParams(request):
@@ -178,6 +180,25 @@ def validate_globus_oauth_token(token, request=None):
     if not auth_token:
         return False
     return True
+
+class OpenstackTokenAuthentication(TokenAuthentication):
+
+    """
+    OpenstackTokenAuthentication:
+    To authenticate, pass the token key in the "Authorization" HTTP header,
+    prepend with the string "Token ". For example:
+        Authorization: Token <Keystone_Token>
+    """
+
+    def authenticate(self, request):
+        auth = request.META.get('HTTP_AUTHORIZATION', '').split()
+        auth_url = auth_settings.KEYSTONE_SERVER
+        driver = OpenStackIdentity_3_0_Connection(auth_url=auth_url+"/auth/tokens", user_id=username, key=password, token_scope=OpenStackIdentityTokenScope.PROJECT, tenant_name=project_name)
+        if len(auth) == 2 and auth[0].lower() == "token":
+            token_key = auth[1]
+        #FIXME: Given a tropo-logged-in user with a keystone key.. is it possible to authenticate them with atmosphere?
+        return None
+
 
 class OAuthTokenAuthentication(TokenAuthentication):
 
