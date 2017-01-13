@@ -287,15 +287,16 @@ class MockLoginBackend(authentication.BaseAuthentication):
             return None
 
 
-class OpenstackLoginBackend(authentication.BaseAuthentication):
+class OpenstackLoginBackend(ModelBackend):
     """
     Libcloud OpenstackIdentity 3.0 Login for Atmosphere
     """
-    def authenticate(self, username, password, project_name=None, request=None):
+    def authenticate(self, username, password, project_name=None, auth_url=None, request=None):
         if not project_name:
             project_name = username
 
-        auth_url = auth_settings.KEYSTONE_SERVER
+        if not auth_url:
+            auth_url = auth_settings.KEYSTONE_SERVER
 
         driver = OpenStackIdentity_3_0_Connection(auth_url=auth_url+"/auth/tokens", user_id=username, key=password, token_scope=OpenStackIdentityTokenScope.PROJECT, tenant_name=project_name)
 
@@ -318,7 +319,7 @@ class OpenstackLoginBackend(authentication.BaseAuthentication):
             'entitlement': []
         })
 
-class KeystoneLoginBackend(authentication.BaseAuthentication):
+class KeystoneLoginBackend(ModelBackend):
     """
     Keystone Auth Login for Atmosphere
     """
@@ -349,11 +350,4 @@ class KeystoneLoginBackend(authentication.BaseAuthentication):
             except:
                 return None
         except:
-            return None
-
-    def get_user(self, user_id):
-        User = get_user_model()
-        try:
-            return User.objects.get(pk=user_id)
-        except User.DoesNotExist:
             return None
