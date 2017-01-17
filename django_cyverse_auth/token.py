@@ -2,6 +2,7 @@
 """
 Token based authentication
 """
+from urlparse import urlparse
 from datetime import timedelta
 
 from django.conf import settings
@@ -191,13 +192,55 @@ class OpenstackTokenAuthentication(TokenAuthentication):
     """
 
     def authenticate(self, request):
+        """
+        TODO: This method might take an already-logged in user who possesses a KEYSTONE TOKEN -- one could then determine if the token was still 'valid' and use that truth-value to authenticate the request.
+        The entire user-object would need to be returned, and the dependencies for this method would have to include rtwo/openstacksdk which might make this entire process out-of-scope for django-cyverse-auth
+        TODO: Ideally, more things would be passed through headers to tell us:
+            - What KEYSTONE_SERVER to authenticate with
+            - What the username or other information is *expected* to be..
+            - ??
+        """
         auth = request.META.get('HTTP_AUTHORIZATION', '').split()
         auth_url = auth_settings.KEYSTONE_SERVER
-        driver = OpenStackIdentity_3_0_Connection(auth_url=auth_url+"/auth/tokens", user_id=username, key=password, token_scope=OpenStackIdentityTokenScope.PROJECT, tenant_name=project_name)
+        region_name = "RegionOne"  # This could be passed in via header _OR_ as an auth_settings.KEYSTONE_REGION_NAME
+        domain_name = "Default"  # This could be passed in via header _OR_ as an auth_settings.KEYSTONE_DOMAIN_NAME
+        parsed_auth_url = urlparse(auth_url)
+        hostname = parsed_auth_url.hostname
+        token_key = None
         if len(auth) == 2 and auth[0].lower() == "token":
             token_key = auth[1]
-        #FIXME: Given a tropo-logged-in user with a keystone key.. is it possible to authenticate them with atmosphere?
-        return None
+        if not token_key:
+            return None
+        try:
+            from rtwo.drivers.common import _connect_to_openstack_sdk
+        except ImportError:
+            logger.exception("Cannot use OpenstackTokenAuthentication without the rtwo library. Please `pip install rtwo` and try again!")
+            return None
+
+        sdk_args = {
+            'auth_url': auth_url.replace('5000','35357'),
+            'ex_force_base_url': auth_url.replace(":5000/v3", ":8774/v2/"),
+            'identity_api_version': 3,
+            'project_domain_name': domain_name,
+            'region_name': region_name,
+            'user_domain_name': domain_name,
+            "auth_plugin": "token",
+            "token": token_key
+        }
+        stack_sdk = _connect_to_openstack_sdk(**sdk_args)
+        try:
+            stack_sdk.authorize()
+            whoami = stack_sdk.session.auth.auth_ref
+            username = whoami.username
+            new_profile = {
+                'username': username,
+                'firstName': username,
+                'lastName': "",
+                'email': "%s@%s" % (username, hostname),
+            }
+            return create_user_and_token(new_profile, token_key)
+        except:
+            return None
 
 
 class OAuthTokenAuthentication(TokenAuthentication):
