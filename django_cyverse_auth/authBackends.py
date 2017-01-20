@@ -8,6 +8,8 @@ from django.conf import settings
 from django.contrib.auth import get_user_model
 
 from libcloud.common.openstack_identity import OpenStackIdentity_3_0_Connection, OpenStackIdentityTokenScope
+from libcloud.compute.providers import get_driver
+from libcloud.compute.types import Provider
 
 from keystoneauth1.identity import v3
 from keystoneauth1 import session
@@ -15,7 +17,7 @@ from keystoneclient.v3 import client
 
 
 from .settings import auth_settings
-from .models import get_or_create_user
+from .models import get_or_create_user, create_user_and_token
 from .models import Token
 from .protocol.ldap import ldap_validate, ldap_formatAttrs
 from .protocol.ldap import lookupUser as ldap_lookupUser
@@ -161,13 +163,6 @@ def create_user_token_from_cas_profile(profile, access_token):
     user_token = Token.objects.create(key=access_token, user=user)
     return user_token
 
-def generate_token(user, issued_token=None):
-    if not issued_token:
-        issued_token = uuid4()
-    user_token = Token.objects.create(user=user, key=str(issued_token))
-    return user_token
-
-
 class GlobusOAuthLoginBackend(object):
     """
     Globus OAuth Authentication Backend
@@ -290,67 +285,162 @@ class MockLoginBackend(authentication.BaseAuthentication):
 
 class OpenstackLoginBackend(ModelBackend):
     """
-    Libcloud OpenstackIdentity 3.0 Login for Atmosphere
+    Keystone Login for Atmosphere
+    Includes optional libcloud setup if/when keystone client stops working.
     """
-    def authenticate(self, username, password, project_name=None, auth_url=None, request=None):
+    strategy = "keystone"
+
+    def authenticate(self, username, password, project_name=None, auth_url=None, token=None, domain=None, request=None):
         if not project_name:
             project_name = username
 
         if not auth_url:
             auth_url = auth_settings.KEYSTONE_SERVER
+        if not domain:
+            domain = auth_settings.KEYSTONE_DOMAIN_NAME
         if '/v' not in auth_url:
             auth_url += "/v3"  # Assume v3
+        #TODO: If necessary, create a auth_setting 'feature' to select 'libcloud' or 'keystone' as the strategy and then validate token/auth the same way.
+        if self.strategy == 'libcloud':
+            user = self.auth_by_libcloud(auth_url, project_name, domain, username, password, token, request)
+        else:
+            user = self.auth_by_keystone(auth_url, project_name, domain, username, password, token, request)
+        return user
 
-        driver = OpenStackIdentity_3_0_Connection(auth_url=auth_url+"/auth/tokens", user_id=username, key=password, token_scope=OpenStackIdentityTokenScope.PROJECT, tenant_name=project_name)
+    def auth_by_keystone(self, auth_url, project_name, domain, username, password=None, token=None, request=None):
+        """
+        Given username/password or username/token
+        return user
+        """
+        if token:
+            user = self.keystone_validate_token(auth_url, username, token, project_name, domain, request)
+            return user
+        return self.keystone_validate_auth(auth_url, username, password, project_name, domain, request)
+
+    def keystone_validate_auth(self, auth_url, username, password, project_name, domain_name, request):
+        """
+        Given username,password -- validate with keystone
+        """
+        password_auth = v3.Password(
+            auth_url=auth_url,
+            username=username, password=password,
+            user_domain_id=domain_name,
+            project_name=project_name, project_domain_id=domain_name)
+        try:
+            token = self._keystone_auth_to_token(password_auth, username, project_name)
+            return self._update_token(auth_url, username, token, request)
+        except:
+            logger.exception("Error validating keystone auth by password")
+            return None
+
+    def keystone_validate_token(self, auth_url, username, token, project_name, project_domain, request):
+        """
+        Given token -- validate with keystone
+        """
+        token_auth=v3.Token(
+            auth_url=auth_url,
+            token=token,
+            project_name=project_name,
+            project_domain_id=project_domain)
+        try:
+            self._keystone_auth_to_token(token_auth, username, project_name)
+            return self._update_token(auth_url, username, token, request)
+        except:
+            logger.exception("Error validating keystone auth by token")
+            return None
+
+    def _keystone_auth_to_token(self, keystone_auth_obj, username, project_name):
+        """
+        Validates a keystone auth (v3.Password or v3.Token) to determine if its valid
+        if valid, it should match the username/project_name
+        """
+        ks_session = session.Session(auth=keystone_auth_obj)
+        ks_client = client.Client(session=ks_session)
+        # Validate the driver by requesting token data from keystone
+        try:
+            token_key = ks_session.get_token()
+        except:
+            raise Exception("Keystone client could not validate authentication")
+
+        # Validate the token_data returned from keystone
+        try:
+            token_data = ks_client.tokens.get_token_data(token_key)
+            token_username = token_data['token']['user']['name']
+            token_project_name = token_data['token']['project']['name']
+        except (KeyError, ValueError):
+            logger.exception("DATA CHANGED -- update value to match new token_data: %s" % token_data)
+            raise
+
+        if token_project_name != project_name:
+            raise Exception("Token %s does not match expected project name - %s" % token_key, project_name)
+        if token_username != username:
+            raise Exception("Token %s does not match expected username - %s" % token_key, username)
+        return token_key
+    #Alternative method -- libcloud 'strategy'
+
+    def auth_by_libcloud(self, auth_url, project_name, domain, username, password=None, token=None, request=None):
+        """
+        Given username/password or username/token
+        return user
+        """
+        if token:
+            user = self.libcloud_validate_token(auth_url, username, token, project_name, domain, request)
+            return user
+        return self.libcloud_validate_auth(auth_url, username, password, project_name, domain, request)
+
+    def libcloud_validate_token(self, auth_url, username, token, project_name, domain, request):
+        OpenStack = get_driver(Provider.OPENSTACK)
+        driver = OpenStack(username, "",
+                   ex_force_base_url=auth_url.replace(":5000/v3",":8774/v2"),
+                   ex_force_auth_url=auth_url,
+                   ex_tenant_name=project_name, ex_domain_name=domain,
+                   ex_force_auth_version='3.x_password',
+                   ex_force_service_region='RegionOne',
+                   ex_force_auth_token=token)
+        try:
+            sizes = driver.list_sizes()
+            return self._update_token(auth_url, username, token, request)
+        except Exception as exc:
+            logger.exception("Error validating libcloud auth by token")
+            return None
+
+
+    def libcloud_validate_auth(self, auth_url, username, password, project_name, domain, request):
+        driver = OpenStackIdentity_3_0_Connection(
+            auth_url=auth_url+"/auth/tokens",
+            user_id=username, key=password,  #TODO: add domain
+            token_scope=OpenStackIdentityTokenScope.PROJECT, tenant_name=project_name)
 
         try:
             conn = driver.authenticate()
             auth_token = driver.auth_token
-            if request:
-                request.session['token_key'] = auth_token
+            return self._update_token(auth_url, username, auth_token, request)
         except:
+            logger.exception("Error validating libcloud auth by password")
             return None
 
+    # Private helper methods -- commonly used
+
+    def _user_profile_for_auth(self, auth_url, username):
         parsed_auth_url = urlparse(auth_url)
         hostname = parsed_auth_url.hostname
-
-        return get_or_create_user(username, {
+        user_profile = {
             'username': username,
             'firstName': username,
             'lastName': "",
             'email': "%s@%s" % (username, hostname),
             'entitlement': []
-        })
+        }
+        return user_profile
 
-class KeystoneLoginBackend(ModelBackend):
-    """
-    Keystone Auth Login for Atmosphere
-    """
-    def authenticate(self, username, password, request=None):
-        auth_url = auth_settings.KEYSTONE_SERVER
-        user_domain_name  = auth_settings.KEYSTONE_DOMAIN_NAME
-        parsed_auth_url = urlparse(auth_url)
-        hostname = parsed_auth_url.hostname
-        unscoped_auth=v3.Password(username=username,password=password,auth_url=auth_url,user_domain_name=user_domain_name, unscoped=True)
-        unscoped_sess=session.Session(auth=unscoped_auth)
-        try:
-            unscoped_token=unscoped_sess.get_token()
-            try:
-                auth=v3.Token(auth_url=auth_url,token=unscoped_token)
-                sess=session.Session(auth=auth)
-                scoped_token=sess.get_token()
-                # Without modification of OpenStack's default user-role permissions,
-                # it is impossible to introspect further for user information.
-                # As a result, any accounts created this way will not have a valid: [firstName, lastName, email] attribute.
-                # Openstack only stores e-mail, anyway...
-                return get_or_create_user(username, {
-                    'username': username,
-                    'firstName': username,
-                    'lastName': "",
-                    'email': "%s@%s" % (username, hostname),
-                    'entitlement': []
-                })
-            except:
-                return None
-        except:
-            return None
+    def _update_token(self, auth_url, username, token, request=None):
+        user_profile = self._user_profile_for_auth(auth_url, username)
+        auth_token = create_user_and_token(user_profile, token, issuer="OpenstackLoginBackend")
+        user = auth_token.user
+        if request:
+            request.session['token_key'] = auth_token.key
+        return user
+
+    def _grant_access(self, auth_url, username):
+        user_profile = self._user_profile_for_auth(auth_url, username)
+        return get_or_create_user(username, user_profile)
