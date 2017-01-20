@@ -96,7 +96,7 @@ class LDAPLoginBackend(ModelBackend):
     (Logging in from admin or Django REST framework login)
     """
 
-    def authenticate(self, username=None, password=None, request=None):
+    def authenticate(self, username=None, password=None, token=None, request=None):
         """
         Return user if validated by LDAP.
         Return None otherwise.
@@ -108,8 +108,17 @@ class LDAPLoginBackend(ModelBackend):
             return None
         ldap_attrs = ldap_lookupUser(username)
         attributes = ldap_formatAttrs(ldap_attrs)
+        attributes['username'] = username
         logger.debug("[LDAP] Authentication Success - " + username)
-        return get_or_create_user(username, attributes)
+        return self._update_token(attributes, token, request)
+
+    def _update_token(self, user_profile, token, request=None):
+        auth_token = create_user_and_token(user_profile, token, issuer="LDAPLoginBackend")
+        user = auth_token.user
+        if request:
+            request.session['token_key'] = auth_token.key
+        return user
+
 
 
 class AuthTokenLoginBackend(ModelBackend):
