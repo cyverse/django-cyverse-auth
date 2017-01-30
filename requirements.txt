@@ -6,6 +6,7 @@ python-ldap
 requests
 threepio
 apache-libcloud==0.20.1
+python-keystoneclient
 keystoneauth1
 
 # For developers -- Uncomment
