@@ -178,10 +178,10 @@ def create_token(username, token_key=None, token_expire=None, remote_ip=None, is
             key=token_key, user=user)
         logger.debug("Retrieved existing token - %s" % token_key)
     except Token.DoesNotExist:
-        auth_user_token = Token.objects.create(
+        auth_user_token = Token.objects.get_or_create(
             key=token_key, user=user, issuer=issuer,
             remote_ip=remote_ip,
-            api_server_url=auth_settings.API_SERVER_URL)
+            api_server_url=auth_settings.API_SERVER_URL)[0]
         logger.debug("Created new token - %s" % token_key)
     if token_expire:
         auth_user_token.update_expiration(token_expire)
