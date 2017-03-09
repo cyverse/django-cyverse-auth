@@ -206,7 +206,10 @@ def get_or_create_user(username=None, attributes={}):
         user = User.objects.get(username=username)
     except User.DoesNotExist:
         now = timezone.now()
-        user = User.objects.create_user(username, "", last_login=now)
+        user = User.objects.get_or_create(
+            username=username,
+            email=None,
+            last_login=now)
     if attributes.get('firstName'):
         user.first_name = attributes['firstName']
     if attributes.get('lastName'):
