@@ -58,7 +58,7 @@ class SAMLLoginBackend(ModelBackend):
         # TODO: See if you were the auth backend used to originate the request.
         # TODO: Look at request session for a token and see if its still valid.
         if False:
-            logger.debug("SAML Authentication failed - " + username)
+            logger.debug("SAML Authentication failed - %s" % username)
             return None
 
 
@@ -83,7 +83,7 @@ class CASLoginBackend(ModelBackend):
         logger.info("Authenticate by CAS: %s - %s %s"
                     % (username, success, cas_response))
         if not success:
-            logger.debug("CAS Authentication failed - " + username)
+            logger.debug("CAS Authentication failed - %s" % username)
             return None
         attributes = cas_response.attributes
         return get_or_create_user(username, attributes)
@@ -104,7 +104,7 @@ class LDAPLoginBackend(ModelBackend):
         # logger.debug("LDAPBackend-- U:%s P:%s R:%s"
         #              % (username, password, request))
         if not ldap_validate(username, password):
-            logger.debug("LDAP Authentication failed - " + username)
+            logger.debug("LDAP Authentication failed - %s" % username)
             return None
         ldap_attrs = ldap_lookupUser(username)
         attributes = ldap_formatAttrs(ldap_attrs)
