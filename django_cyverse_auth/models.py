@@ -7,7 +7,7 @@ import uuid
 
 from .settings import auth_settings
 from django.contrib.auth import get_user_model
-from django.db import models
+from django.db import models, transaction
 from django.conf import settings
 from django.utils import timezone
 
@@ -173,16 +173,12 @@ def create_token(username, token_key=None, token_expire=None, remote_ip=None, is
         logger.warn("User %s doesn't exist on the DB. "
                     "Auth Token _NOT_ created" % username)
         return None
-    try:
-        auth_user_token = Token.objects.get(
-            key=token_key, user=user)
-        logger.debug("Retrieved existing token - %s" % token_key)
-    except Token.DoesNotExist:
-        auth_user_token = Token.objects.get_or_create(
-            key=token_key, user=user, issuer=issuer,
+    auth_user_token = _atomic_get_token(
+            user,
+            token_key=token_key,
+            token_expire=token_expire,
             remote_ip=remote_ip,
-            api_server_url=auth_settings.API_SERVER_URL)[0]
-        logger.debug("Created new token - %s" % token_key)
+            issuer=issuer)
     if token_expire:
         auth_user_token.update_expiration(token_expire)
         auth_user_token.save()
@@ -193,30 +189,15 @@ def get_or_create_user(username=None, attributes={}):
     """
     Retrieve or create a User matching the username (No password)
     """
-    User = get_user_model()
     if not username:
         return None
 
-    # NOTE: REMOVE this when it is no longer true!
+    # NOTE: Mapping of usernames to Django user happens here.
+    # In this example, usernames are 'case insensitive' so we
     # Force any username lookup to be in lowercase
     username = username.lower()
 
-    try:
-        # Look for the username "EXACT MATCH"
-        user = User.objects.get(username=username)
-    except User.DoesNotExist:
-        now = timezone.now()
-        user = User.objects.get_or_create(
-            username=username,
-            email=None,
-            last_login=now)
-    if attributes.get('firstName'):
-        user.first_name = attributes['firstName']
-    if attributes.get('lastName'):
-        user.last_name = attributes['lastName']
-    if attributes.get('email'):
-        user.email = attributes['email']
-    user.save()
+    user = _atomic_get_user(username, attributes=attributes)
     return user
 
 
@@ -226,7 +207,7 @@ def lookupSessionToken(request):
     """
     token_key = request.session['token']
     try:
-        token = AuthToken.objects.get(user=request.user, key=token_key)
+        token = Token.objects.get(user=request.user, key=token_key)
         if token.is_expired():
             return None
         return token
@@ -238,7 +219,7 @@ def validateToken(username, token_key):
     """
     Verify the token belongs to username, and renew it
     """
-    auth_user_token = AuthToken.objects.filter(
+    auth_user_token = Token.objects.filter(
         user__username=username, key=token_key)
     if not auth_user_token:
         return None
@@ -260,3 +241,47 @@ def userCanEmulate(username):
     except User.DoesNotExist:
         return False
 
+
+@transaction.atomic
+def _atomic_get_token(user, token_key=None, token_expire=None, remote_ip=None, issuer=None):
+    try:
+        auth_user_token = Token.objects.get(
+            key=token_key, user=user)
+        logger.debug("Retrieved existing token - %s" % token_key)
+    except Token.DoesNotExist:
+        auth_user_token = Token.objects.get_or_create(
+            key=token_key, user=user, issuer=issuer,
+            remote_ip=remote_ip,
+            api_server_url=auth_settings.API_SERVER_URL)[0]
+        logger.debug("Created new token - %s" % token_key)
+    return auth_user_token
+
+
+@transaction.atomic
+def _atomic_get_user(username, attributes={}):
+    User = get_user_model()
+    try:
+        user = User.objects.get(username=username)
+    except User.DoesNotExist:
+        now = timezone.now()
+        user = User.objects.get_or_create(
+            username=username,
+            email=None,
+            last_login=now)[0]
+    # Update if necessary
+    changed = False
+    if attributes.get('firstName') \
+            and user.first_name != attributes['firstName']:
+        changed = True
+        user.first_name = attributes['firstName']
+    if attributes.get('lastName') \
+            and user.last_name != attributes['lastName']:
+        changed = True
+        user.last_name = attributes['lastName']
+    if attributes.get('email') \
+            and user.email != attributes['email']:
+        changed = True
+        user.email = attributes['email']
+    if changed:
+        user.save()
+    return user
