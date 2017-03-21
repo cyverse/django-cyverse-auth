@@ -238,6 +238,7 @@ class OpenstackTokenAuthentication(TokenAuthentication):
                 'lastName': "",
                 'email': "%s@%s" % (username, hostname),
             }
+            logger.debug("Profile attrs %s converted to %s" % (profile_attrs, new_profile))
             return create_user_and_token(new_profile, token_key)
         except:
             return None

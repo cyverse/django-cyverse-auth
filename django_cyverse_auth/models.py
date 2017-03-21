@@ -264,9 +264,10 @@ def _atomic_get_user(username, attributes={}):
         user = User.objects.get(username=username)
     except User.DoesNotExist:
         now = timezone.now()
+        email = attributes.get('email', '%s@atmosphere.local' % username)
         user = User.objects.get_or_create(
             username=username,
-            email=None,
+            email=email,
             last_login=now)[0]
     # Update if necessary
     changed = False
