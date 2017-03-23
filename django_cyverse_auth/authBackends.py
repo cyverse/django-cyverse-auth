@@ -336,8 +336,8 @@ class OpenstackLoginBackend(ModelBackend):
             user_domain_id=domain_name,
             project_name=project_name, project_domain_id=domain_name)
         try:
-            token = self._keystone_auth_to_token(password_auth, username, project_name)
-            return self._update_token(auth_url, username, token, request)
+            token, email = self._keystone_auth_to_token(password_auth, username, project_name)
+            return self._update_token(auth_url, username, token, email, request)
         except:
             logger.exception("Error validating keystone auth by password")
             return None
@@ -352,8 +352,8 @@ class OpenstackLoginBackend(ModelBackend):
             project_name=project_name,
             project_domain_id=project_domain)
         try:
-            self._keystone_auth_to_token(token_auth, username, project_name)
-            return self._update_token(auth_url, username, token, request)
+            token, email = self._keystone_auth_to_token(token_auth, username, project_name)
+            return self._update_token(auth_url, username, token, email, request)
         except:
             logger.exception("Error validating keystone auth by token")
             return None
@@ -384,7 +384,13 @@ class OpenstackLoginBackend(ModelBackend):
             raise Exception("Token %s does not match expected project name - %s" % token_key, project_name)
         if token_username != username:
             raise Exception("Token %s does not match expected username - %s" % token_key, username)
-        return token_key
+        try:
+            user_id = str(ks_session.get_user_id())
+            ks_user = ks_client.users.get(user_id)
+            email = str(ks_user.email)
+        except:
+            raise Exception("Cannot get user_id or user")
+        return token_key, email
     #Alternative method -- libcloud 'strategy'
 
     def auth_by_libcloud(self, auth_url, project_name, domain, username, password=None, token=None, request=None):
@@ -430,20 +436,20 @@ class OpenstackLoginBackend(ModelBackend):
 
     # Private helper methods -- commonly used
 
-    def _user_profile_for_auth(self, auth_url, username):
+    def _user_profile_for_auth(self, auth_url, username, email):
         parsed_auth_url = urlparse(auth_url)
         hostname = parsed_auth_url.hostname
         user_profile = {
             'username': username,
             'firstName': username,
             'lastName': "",
-            'email': "%s@%s" % (username, hostname),
+            'email': email,
             'entitlement': []
         }
         return user_profile
 
-    def _update_token(self, auth_url, username, token, request=None):
-        user_profile = self._user_profile_for_auth(auth_url, username)
+    def _update_token(self, auth_url, username, token, email, request=None):
+        user_profile = self._user_profile_for_auth(auth_url, username, email)
         auth_token = create_user_and_token(user_profile, token, issuer="OpenstackLoginBackend")
         user = auth_token.user
         if request:
