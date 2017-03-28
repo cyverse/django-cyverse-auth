@@ -336,7 +336,8 @@ class OpenstackLoginBackend(ModelBackend):
             user_domain_id=domain_name,
             project_name=project_name, project_domain_id=domain_name)
         try:
-            token, email = self._keystone_auth_to_token(password_auth, username, project_name)
+            session, token = self._keystone_auth_to_token(password_auth, username, project_name)
+            email = self._lookup_email(session)
             return self._update_token(auth_url, username, token, email, request)
         except:
             logger.exception("Error validating keystone auth by password")
@@ -352,7 +353,8 @@ class OpenstackLoginBackend(ModelBackend):
             project_name=project_name,
             project_domain_id=project_domain)
         try:
-            token, email = self._keystone_auth_to_token(token_auth, username, project_name)
+            session, token = self._keystone_auth_to_token(token_auth, username, project_name)
+            email = self._lookup_email(session)
             return self._update_token(auth_url, username, token, email, request)
         except:
             logger.exception("Error validating keystone auth by token")
@@ -384,13 +386,7 @@ class OpenstackLoginBackend(ModelBackend):
             raise Exception("Token %s does not match expected project name - %s" % token_key, project_name)
         if token_username != username:
             raise Exception("Token %s does not match expected username - %s" % token_key, username)
-        try:
-            user_id = str(ks_session.get_user_id())
-            ks_user = ks_client.users.get(user_id)
-            email = str(ks_user.email)
-        except:
-            raise Exception("Cannot get user_id or user")
-        return token_key, email
+        return ks_session, token_key
     #Alternative method -- libcloud 'strategy'
 
     def auth_by_libcloud(self, auth_url, project_name, domain, username, password=None, token=None, request=None):
@@ -459,3 +455,13 @@ class OpenstackLoginBackend(ModelBackend):
     def _grant_access(self, auth_url, username):
         user_profile = self._user_profile_for_auth(auth_url, username)
         return get_or_create_user(username, user_profile)
+
+    def _lookup_email(self, session):
+        try:
+            user_id = str(session.get_user_id())
+            ks_client = client.Client(session=session)
+            ks_user = ks_client.users.get(user_id)
+            email = str(ks_user.email)
+        except:
+            raise Exception("Cannot get user's email")
+        return email
