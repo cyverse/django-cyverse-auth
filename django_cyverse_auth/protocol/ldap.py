@@ -170,6 +170,40 @@ def ldap_formatAttrs(ldap_attrs):
         return None
 
 
+def get_groups_for(username):
+    try:
+        ldap_server = auth_settings.LDAP_SERVER
+        ldap_group_dn = auth_settings.LDAP_SERVER_DN.replace(
+            "ou=people", "ou=Groups")
+        ldap_conn = ldap_driver.initialize(ldap_server)
+        matching_groups = ldap_conn.search_s(
+            ldap_group_dn, ldap_driver.SCOPE_SUBTREE, "(&(cn=*)(memberUid=%s))" % username)
+        groups = []
+        for group in matching_groups:
+            group_name = group[1]['cn'][0]
+            groups.append(group_name)
+        return groups
+    except Exception as e:
+        logger.exception(e)
+        return []
+
+
+def list_groups():
+    groups = []
+    try:
+        ldap_server = auth_settings.LDAP_SERVER
+        ldap_group_dn = auth_settings.LDAP_SERVER_DN.replace(
+            "ou=people", "ou=Groups")
+        ldap_conn = ldap_driver.initialize(ldap_server)
+        matching_groups = ldap_conn.search_s(
+            ldap_group_dn, ldap_driver.SCOPE_SUBTREE, "(&(cn=*))")
+        for group in matching_groups:
+            group_name = group[1]['cn'][0]
+            groups.append(group_name)
+    except Exception as e:
+        logger.exception(e)
+    return groups
+
 def get_members(groupname):
     """
     """
