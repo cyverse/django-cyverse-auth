@@ -214,8 +214,15 @@ class OAuthLoginBackend(object):
             user_token = Token.objects.get(key=access_token)
 
         except Token.DoesNotExist:
-            profile = cas_oauth_client.get_profile(access_token=access_token)
-            # todo: handle [profile.get('error') = 'expired_accessToken'] error
+            try:
+                profile = cas_oauth_client.get_profile(access_token=access_token)
+            except:
+                logger.exception("Unexpected error occurred during exchange of access_token --> profile")
+                raise exceptions.AuthenticationFailed("Unexpected error occurred during exchange of access_token --> profile")
+            error = profile.get('error')
+
+            if error:
+                raise exceptions.AuthenticationFailed(error)
             user_token = create_user_token_from_cas_profile(profile, access_token)
 
         user = user_token.user
@@ -251,7 +258,11 @@ class OAuthTokenLoginBackend(authentication.BaseAuthentication):
             user_token = Token.objects.get(key=access_token)
 
         except Token.DoesNotExist:
-            profile = cas_oauth_client.get_profile(access_token=access_token)
+            try:
+                profile = cas_oauth_client.get_profile(access_token=access_token)
+            except:
+                logger.exception("Unexpected error occurred during exchange of access_token --> profile")
+                raise exceptions.AuthenticationFailed("Unexpected error occurred during exchange of access_token --> profile")
             error = profile.get('error')
 
             if error:

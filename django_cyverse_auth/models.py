@@ -8,6 +8,7 @@ import uuid
 from .settings import auth_settings
 from django.contrib.auth import get_user_model
 from django.db import models, transaction
+from django.db import IntegrityError
 from django.conf import settings
 from django.utils import timezone
 
@@ -198,6 +199,22 @@ def get_or_create_user(username=None, attributes={}):
     username = username.lower()
 
     user = _atomic_get_user(username, attributes=attributes)
+    # Update if necessary
+    changed = False
+    if attributes.get('firstName') \
+            and user.first_name != attributes['firstName']:
+        changed = True
+        user.first_name = attributes['firstName']
+    if attributes.get('lastName') \
+            and user.last_name != attributes['lastName']:
+        changed = True
+        user.last_name = attributes['lastName']
+    if attributes.get('email') \
+            and user.email != attributes['email']:
+        changed = True
+        user.email = attributes['email']
+    if changed:
+        user.save()
     return user
 
 
@@ -248,12 +265,19 @@ def _atomic_get_token(user, token_key=None, token_expire=None, remote_ip=None, i
         auth_user_token = Token.objects.get(
             key=token_key, user=user)
         logger.debug("Retrieved existing token - %s" % token_key)
+        return auth_user_token
     except Token.DoesNotExist:
-        auth_user_token = Token.objects.get_or_create(
+        pass
+    try:
+        auth_user_token = Token.objects.create(
             key=token_key, user=user, issuer=issuer,
             remote_ip=remote_ip,
-            api_server_url=auth_settings.API_SERVER_URL)[0]
+            api_server_url=auth_settings.API_SERVER_URL)
         logger.debug("Created new token - %s" % token_key)
+    except IntegrityError:
+        auth_user_token = Token.objects.get(
+            key=token_key, user=user)
+        logger.debug("Race-Condition avoided: Retrieved existing token - %s" % token_key)
     return auth_user_token
 
 
@@ -262,27 +286,20 @@ def _atomic_get_user(username, attributes={}):
     User = get_user_model()
     try:
         user = User.objects.get(username=username)
+        logger.debug("Retrieved existing user - %s" % username)
+        return user
     except User.DoesNotExist:
+        pass
+    try:
         now = timezone.now()
         email = attributes.get('email', '%s@atmosphere.local' % username)
-        user = User.objects.get_or_create(
+        user = User.objects.create(
             username=username,
             email=email,
-            last_login=now)[0]
-    # Update if necessary
-    changed = False
-    if attributes.get('firstName') \
-            and user.first_name != attributes['firstName']:
-        changed = True
-        user.first_name = attributes['firstName']
-    if attributes.get('lastName') \
-            and user.last_name != attributes['lastName']:
-        changed = True
-        user.last_name = attributes['lastName']
-    if attributes.get('email') \
-            and user.email != attributes['email']:
-        changed = True
-        user.email = attributes['email']
-    if changed:
-        user.save()
-    return user
+            last_login=now)
+        logger.debug("Created new user - %s" % username)
+        return user
+    except IntegrityError:
+        user = User.objects.get(username=username)
+        logger.debug("Retrieved existing user - %s" % username)
+        return user
