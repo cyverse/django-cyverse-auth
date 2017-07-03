@@ -346,9 +346,13 @@ class OpenstackLoginBackend(ModelBackend):
             username=username, password=password,
             user_domain_id=domain_name,
             project_name=project_name, project_domain_id=domain_name)
+        
+        ks_session=session.Session(auth=password_auth)
+        auth_token = ks_session.get_token()
+        expiry_time = password_auth.auth_ref.expires
         try:
             token = self._keystone_auth_to_token(password_auth, username, project_name)
-            return self._update_token(auth_url, username, token, request)
+            return self._update_token(auth_url, username, token, expiry_time, request)
         except:
             logger.exception("Error validating keystone auth by password")
             return None
@@ -362,9 +366,13 @@ class OpenstackLoginBackend(ModelBackend):
             token=token,
             project_name=project_name,
             project_domain_id=project_domain)
+
+        ks_session=session.Session(auth=token_auth)
+        auth_token = ks_session.get_token()
+        expiry_time = token_auth.auth_ref.expires
         try:
             self._keystone_auth_to_token(token_auth, username, project_name)
-            return self._update_token(auth_url, username, token, request)
+            return self._update_token(auth_url, username, token, expiry_time, request)
         except:
             logger.exception("Error validating keystone auth by token")
             return None
@@ -453,12 +461,13 @@ class OpenstackLoginBackend(ModelBackend):
         }
         return user_profile
 
-    def _update_token(self, auth_url, username, token, request=None):
+    def _update_token(self, auth_url, username, token, expiry_time, request=None):
         user_profile = self._user_profile_for_auth(auth_url, username)
-        auth_token = create_user_and_token(user_profile, token, issuer="OpenstackLoginBackend")
+        auth_token = create_user_and_token(user_profile, token, token_expire=expiry_time, issuer="OpenstackLoginBackend")
         user = auth_token.user
         if request:
             request.session['token_key'] = auth_token.key
+            request.session['token_expire_time'] = str(expiry_time)[:19]
         return user
 
     def _grant_access(self, auth_url, username):
