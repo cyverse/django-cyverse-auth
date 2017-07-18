@@ -351,7 +351,7 @@ class OpenstackLoginBackend(ModelBackend):
         auth_token = ks_session.get_token()
         expiry_time = password_auth.auth_ref.expires
         try:
-            email = self._lookup_email(session)
+            email = self._lookup_email(ks_session)
             token = self._keystone_auth_to_token(password_auth, username, project_name)
             return self._update_token(auth_url, username, token, email, expiry_time, request)
         except:
@@ -372,7 +372,7 @@ class OpenstackLoginBackend(ModelBackend):
         auth_token = ks_session.get_token()
         expiry_time = token_auth.auth_ref.expires
         try:
-            email = self._lookup_email(session)
+            email = self._lookup_email(ks_session)
             self._keystone_auth_to_token(token_auth, username, project_name)
             return self._update_token(auth_url, username, token, email, expiry_time, request)
         except:
@@ -482,6 +482,7 @@ class OpenstackLoginBackend(ModelBackend):
             ks_client = client.Client(session=session)
             ks_user = ks_client.users.get(user_id)
             email = str(ks_user.email)
-        except:
-            raise Exception("Cannot get user's email")
+        except keystoneclient.exceptions:
+            #Still thinking about how to obtain the error message
+            return None
         return email
