@@ -9,7 +9,7 @@ from oauth2client.client import OAuth2WebServerFlow
 from oauth2client.client import Error as OAuthError
 
 from django_cyverse_auth.models import (
-    get_or_create_user, create_user_and_token,
+    get_or_create_user, get_or_create_token,
     create_access_token, get_access_token)
 from django_cyverse_auth.settings import auth_settings
 from django_cyverse_auth.exceptions import Unauthorized
@@ -193,7 +193,8 @@ def globus_validate_code(request):
         'lastName':last_name,
         'email': email,
     }
-    auth_token = create_user_and_token(user_profile, user_access_token, expiry_date, issuer)
+    user = get_or_create_user(user_profile['username'], user_profile)
+    auth_token = get_or_create_token(user, user_access_token, token_expire=expiry_date, issuer="OpenstackLoginBackend")
     return auth_token
 
 def create_user_token_from_globus_profile(profile, access_token):
@@ -219,6 +220,6 @@ def create_user_token_from_globus_profile(profile, access_token):
         'lastName':last_name,
         'email': email,
     }
-    auth_token = create_user_and_token(profile_dict, access_token, expiry, issuer)
+    user = get_or_create_user(profile_dict['username'], profile_dict)
+    auth_token = get_or_create_token(user, access_token, token_expire=expiry, issuer=issuer)
     return auth_token
-

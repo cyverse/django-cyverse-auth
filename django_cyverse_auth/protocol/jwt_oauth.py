@@ -1,5 +1,5 @@
 from abc import ABCMeta, abstractmethod
-from django_cyverse_auth.models import create_token
+from django_cyverse_auth.models import get_or_create_token
 
 
 class JWTServiceProvider():
@@ -23,7 +23,7 @@ class JWTServiceProvider():
         """
         decoded_assertion = self.decode_assertion(jwt_assertion)
         user, expiration = self.validate_assertion(decoded_assertion)
-        auth_token = create_token(user.username, expiration)
+        auth_token = get_or_create_token(user.username, expiration)
         return auth_token
 
     @abstractmethod
