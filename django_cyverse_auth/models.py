@@ -5,18 +5,19 @@ from datetime import timedelta
 import hashlib
 import uuid
 
-from .settings import auth_settings
+import logging
+
+from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.db import models, transaction
 from django.db import IntegrityError
-from django.conf import settings
 from django.utils import timezone
 
+from .settings import auth_settings
 
-import logging
 logger = logging.getLogger(__name__)
-
 AUTH_USER_MODEL = getattr(settings, "AUTH_USER_MODEL", 'auth.User')
+
 
 def only_current(now_time=None):
     """
@@ -89,14 +90,14 @@ class Token(models.Model):
         return self.expireTime is not None\
             and self.expireTime <= now_time
 
-    def update_expiration(self, token_expiration=None):
+    @staticmethod
+    def update_expiration(token_expiration=None):
         """
         Updates expiration by pre-determined amount.. Does not call save.
         """
         if not token_expiration:
-            self.expireTime = timezone.now() + timedelta(hours=2)
-        else:
-            self.expireTime = token_expiration
+            token_expiration = timezone.now() + auth_settings.TOKEN_EXPIRY_TIME
+        return token_expiration
 
     def save(self, *args, **kwargs):
         if not self.key:
@@ -150,71 +151,44 @@ def create_access_token(token_key, token_expire, issuer):
     return access_token
 
 
-def create_user_and_token(user_profile, token_key, token_expire=None, remote_ip=None, issuer=None):
-    """
-    Given a user_profile (minimally) containing the keys: ['username', 'firstName', 'lastName', 'email'] and (optionally) a token UUID
-    Create the user
-    Create token for user
-    return token
-    """
-    get_or_create_user(user_profile['username'], user_profile)
-    auth_token = create_token(user_profile['username'], token_key, token_expire, remote_ip, issuer)
-    return auth_token
-
-
-def create_token(username, token_key=None, token_expire=None, remote_ip=None, issuer=None):
+def get_or_create_token(user, token_key=None, token_expire=None, remote_ip=None, issuer=None):
     """
     Generate a Token based on current username
     (And token_key, expiration, issuer.. If available)
     """
-    User = get_user_model()
-    try:
-        user = User.objects.get(username=username)
-    except User.DoesNotExist:
-        logger.warn("User %s doesn't exist on the DB. "
-                    "Auth Token _NOT_ created" % username)
-        return None
-    auth_user_token = _atomic_get_token(
-            user,
-            token_key=token_key,
-            token_expire=token_expire,
-            remote_ip=remote_ip,
-            issuer=issuer)
-    if token_expire:
-        auth_user_token.update_expiration(token_expire)
-        auth_user_token.save()
+    token_expire = Token.update_expiration(token_expire)
+    defaults = {
+        "issuer":issuer,
+        "expireTime":token_expire,
+        "remote_ip":remote_ip,
+        "api_server_url":auth_settings.API_SERVER_URL
+    }
+    auth_user_token, created = Token.objects.update_or_create(
+        key=token_key, user=user, defaults=defaults)
+    logger.info(
+        "%s token - %s" ,
+        "Created" if created else "Retrieved",
+        token_key)
     return auth_user_token
 
 
 def get_or_create_user(username=None, attributes={}):
-    """
-    Retrieve or create a User matching the username (No password)
-    """
-    if not username:
-        return None
-
-    # NOTE: Mapping of usernames to Django user happens here.
-    # In this example, usernames are 'case insensitive' so we
-    # Force any username lookup to be in lowercase
-    username = username.lower()
-
-    user = _atomic_get_user(username, attributes=attributes)
-    # Update if necessary
-    changed = False
-    if attributes.get('firstName') \
-            and user.first_name != attributes['firstName']:
-        changed = True
-        user.first_name = attributes['firstName']
-    if attributes.get('lastName') \
-            and user.last_name != attributes['lastName']:
-        changed = True
-        user.last_name = attributes['lastName']
-    if attributes.get('email') \
-            and user.email != attributes['email']:
-        changed = True
-        user.email = attributes['email']
-    if changed:
-        user.save()
+    User = get_user_model()
+    email = attributes.get('email', '%s@atmosphere.local' % username)
+    first_name = attributes.get('firstName')
+    last_name = attributes.get('lastName')
+    defaults = {
+        'email':email,
+        'first_name':first_name,
+        'last_name':last_name,
+    }
+    user, created =  User.objects.update_or_create(
+        username=username,
+        defaults=defaults)
+    logger.info(
+        "%s User - %s" ,
+        "Created" if created else "Retrieved",
+        username)
     return user
 
 
@@ -241,7 +215,7 @@ def validateToken(username, token_key):
     if not auth_user_token:
         return None
     auth_user_token = auth_user_token[0]
-    auth_user_token.update_expiration()
+    auth_user_token.expireTime = Token.update_expiration()
     auth_user_token.save()
     return auth_user_token
 
@@ -259,47 +233,5 @@ def userCanEmulate(username):
         return False
 
 
-@transaction.atomic
-def _atomic_get_token(user, token_key=None, token_expire=None, remote_ip=None, issuer=None):
-    try:
-        auth_user_token = Token.objects.get(
-            key=token_key, user=user)
-        logger.debug("Retrieved existing token - %s" % token_key)
-        return auth_user_token
-    except Token.DoesNotExist:
-        pass
-    try:
-        auth_user_token = Token.objects.create(
-            key=token_key, user=user, issuer=issuer,
-            remote_ip=remote_ip,
-            api_server_url=auth_settings.API_SERVER_URL)
-        logger.debug("Created new token - %s" % token_key)
-    except IntegrityError:
-        auth_user_token = Token.objects.get(
-            key=token_key, user=user)
-        logger.debug("Race-Condition avoided: Retrieved existing token - %s" % token_key)
-    return auth_user_token
 
 
-@transaction.atomic
-def _atomic_get_user(username, attributes={}):
-    User = get_user_model()
-    try:
-        user = User.objects.get(username=username)
-        logger.debug("Retrieved existing user - %s" % username)
-        return user
-    except User.DoesNotExist:
-        pass
-    try:
-        now = timezone.now()
-        email = attributes.get('email', '%s@atmosphere.local' % username)
-        user = User.objects.create(
-            username=username,
-            email=email,
-            last_login=now)
-        logger.debug("Created new user - %s" % username)
-        return user
-    except IntegrityError:
-        user = User.objects.get(username=username)
-        logger.debug("Retrieved existing user - %s" % username)
-        return user

@@ -14,8 +14,9 @@ import logging
 logger = logging.getLogger(__name__)
 from .settings import auth_settings
 from .exceptions import Unauthorized
-from .models import Token as AuthToken,\
-     create_user_and_token
+from .models import (Token as AuthToken,
+     get_or_create_user,
+     get_or_create_token)
 from .models import get_or_create_user
 from .protocol.cas import cas_validateUser
 from .protocol.cas import cas_profile_for_token
@@ -239,7 +240,9 @@ class OpenstackTokenAuthentication(TokenAuthentication):
                 'email': "%s@%s" % (username, hostname),
             }
             logger.debug("Profile attrs %s converted to %s" % (profile_attrs, new_profile))
-            return create_user_and_token(new_profile, token_key)
+            user = get_or_create_user(new_profile['username'], new_profile)
+            auth_token = get_or_create_token(user, token_key, issuer="OpenstackTokenAuthentication")
+            return auth_token
         except:
             return None
 
@@ -309,7 +312,9 @@ def validate_oauth_token(token, request=None):
         'lastName': profile_attrs['lastName'],
         'email': profile_attrs['email']
     }
-    return create_user_and_token(new_profile, token)
+    user = get_or_create_user(new_profile['username'], new_profile)
+    auth_token = get_or_create_token(user, token, issuer="OAuthTokenAuthentication")
+    return auth_token
 
 
 
@@ -342,7 +347,7 @@ def validate_token(token, request=None):
             # re-authed.
             user_to_auth = request.session.get('emulated_by', user)
             if cas_validateUser(user_to_auth):
-                auth_token.update_expiration()
+                auth_token.expireTime = AuthToken.update_expiration()
                 auth_token.save()
                 return True
             else:
@@ -356,54 +361,3 @@ def validate_token(token, request=None):
             return True
     else:
         return True
-
-
-# VERSION 1 TOKEN VALIDATION
-
-def validate_token1_0(request):
-    """
-    validates the token attached to the request
-    (Opts: in HEADERS || SessionStorage || GET/POST)
-
-    Validate token against the database.
-    Check token's time-out to determine authenticity.
-    If token has timed out,
-    CAS will attempt to reauthenticate the user to renew the token
-    Timed out tokens can be used for GET requests ONLY!
-    """
-    request_vars = getRequestVars(request)
-
-    user = request_vars.get('username', None)
-    token = request_vars.get('token', None)
-    api_server = request_vars.get('api_server', None)
-    emulate = request_vars.get('emulate', None)
-
-    if not user or not token:
-        return False
-    try:
-        token = AuthToken.objects.get(token=token)
-    except AuthToken.DoesNotExist:
-        return False
-
-    tokenExpireTime = timedelta(days=1)
-    # Invalid Token
-    if token.user != user\
-            or token.logout is not None\
-            or token.api_server_url != api_server:
-        return False
-
-    # Expired Token
-    if token.issuedTime + tokenExpireTime < timezone.now():
-        if request.META["REQUEST_METHOD"] == "GET":
-            return True
-        # Expired and POSTing data, need to re-authenticate the token
-        if emulate:
-            user = emulate
-        if not cas_validateUser(user):
-            return False
-        # CAS Reauthentication Success
-
-    # Valid Token
-    token.issuedTime = timezone.now()
-    token.save()
-    return True
