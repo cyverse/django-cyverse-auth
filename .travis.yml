@@ -1,0 +1,23 @@
+---
+  # travis.yml for Django
+  sudo: required
+  dist: trusty
+
+  # Use an older version of trusty until quirks are figured out.
+  # https://blog.travis-ci.com/2017-06-21-trusty-updates-2017-Q2-launch
+  group: deprecated-2017Q2
+
+  cache: pip
+
+  language: python
+  python:
+    - 2.7
+
+  install:
+    - pip install -U pip setuptools pip-tools
+    - pip install -r dev_requirements.txt
+
+  script:
+    - echo "Hello world, I'll do something real useful.. Real soon!"
+    # - flake8 django_cyverse_auth/*
+    # - python demo/manage.py test --keepdb
