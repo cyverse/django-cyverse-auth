@@ -1,3 +1,4 @@
 -r requirements.txt
-twine==1.6.1
-wheel==0.26.0
+flake8
+twine
+wheel

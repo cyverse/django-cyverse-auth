@@ -17,7 +17,7 @@ from keystoneclient.v3 import client
 
 
 from .settings import auth_settings
-from .models import get_or_create_user, create_user_and_token
+from .models import get_or_create_user, get_or_create_token
 from .models import Token
 from .protocol.ldap import ldap_validate, ldap_formatAttrs
 from .protocol.ldap import lookupUser as ldap_lookupUser
@@ -45,7 +45,7 @@ class SAMLLoginBackend(ModelBackend):
     (Used by Django for logging in to admin, storing session info)
     """
 
-    def authenticate(self, username=None, password=None, request=None):
+    def authenticate(self, request, username=None, password=None):
         """
         Return user if validated by CAS
         Return None otherwise.
@@ -69,7 +69,7 @@ class CASLoginBackend(ModelBackend):
     (Used by Django for logging in to admin, storing session info)
     """
 
-    def authenticate(self, username=None, password=None, request=None):
+    def authenticate(self, request, username=None, password=None):
         """
         Return user if validated by CAS
         Return None otherwise.
@@ -96,7 +96,7 @@ class LDAPLoginBackend(ModelBackend):
     (Logging in from admin or Django REST framework login)
     """
 
-    def authenticate(self, username=None, password=None, token=None, request=None):
+    def authenticate(self, request, username=None, password=None, token=None):
         """
         Return user if validated by LDAP.
         Return None otherwise.
@@ -113,7 +113,8 @@ class LDAPLoginBackend(ModelBackend):
         return self._update_token(attributes, token, request)
 
     def _update_token(self, user_profile, token, request=None):
-        auth_token = create_user_and_token(user_profile, token, issuer="LDAPLoginBackend")
+        user = get_or_create_user(user_profile['username'], user_profile)
+        auth_token = get_or_create_token(user, token, issuer="OpenstackLoginBackend")
         user = auth_token.user
         if request:
             request.session['token_key'] = auth_token.key
@@ -130,8 +131,7 @@ class AuthTokenLoginBackend(ModelBackend):
     def __init__(self, *args, **kwargs):
         super(AuthTokenLoginBackend, self).__init__(*args, **kwargs)
 
-    def authenticate(self, username=None, password=None, auth_token=None,
-                     request=None):
+    def authenticate(self, request, username=None, password=None, auth_token=None):
         """
         Return user if validated by their auth_token
         Return None otherwise.
@@ -179,7 +179,7 @@ class GlobusOAuthLoginBackend(object):
     Exchanges an access_token for a user, creates if does not exist
     """
 
-    def authenticate(self, key=None):
+    def authenticate(self, request, key=None):
         user_token = None
         try:
             user_token = Token.objects.get(key=key)
@@ -209,7 +209,7 @@ class OAuthLoginBackend(object):
     Exchanges an access_token for a user, creates if does not exist
     """
 
-    def authenticate(self, access_token=None):
+    def authenticate(self, request, access_token=None):
         try:
             user_token = Token.objects.get(key=access_token)
 
@@ -279,7 +279,7 @@ class MockLoginBackend(authentication.BaseAuthentication):
     AuthenticationBackend for Testing login
     (Logging in from admin or Django REST framework login)
     """
-    def authenticate(self, username=None, password=None, request=None):
+    def authenticate(self, request, username=None, password=None):
         """
         Return user if Always
         Return None Never.
@@ -310,7 +310,7 @@ class OpenstackLoginBackend(ModelBackend):
     """
     strategy = "keystone"
 
-    def authenticate(self, username, password, project_name=None, auth_url=None, token=None, domain=None, request=None):
+    def authenticate(self, request, username, password, project_name=None, auth_url=None, token=None, domain=None):
         if not project_name:
             project_name = username
 
@@ -465,7 +465,8 @@ class OpenstackLoginBackend(ModelBackend):
 
     def _update_token(self, auth_url, username, token, email, expiry_time, request=None):
         user_profile = self._user_profile_for_auth(auth_url, username, email)
-        auth_token = create_user_and_token(user_profile, token, token_expire=expiry_time, issuer="OpenstackLoginBackend")
+        user = get_or_create_user(user_profile['username'], user_profile)
+        auth_token = get_or_create_token(user, token, token_expire=expiry_time, issuer="OpenstackLoginBackend")
         user = auth_token.user
         if request:
             request.session['token_key'] = auth_token.key

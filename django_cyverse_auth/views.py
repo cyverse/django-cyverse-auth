@@ -13,7 +13,7 @@ from django.http import HttpResponse, HttpResponseRedirect
 import logging
 logger = logging.getLogger(__name__)
 
-from .models import create_token, userCanEmulate
+from .models import get_or_create_token, userCanEmulate
 from .models import Token as AuthToken
 from .protocol.cas import cas_validateUser, cas_loginRedirect, get_cas_oauth_client
 from .protocol.globus import globus_logout, globus_authorize, globus_validate_code
@@ -123,7 +123,7 @@ def cas_callback_authorize(request):
     # ASSERT: A valid OAuth token gave us the Users Profile.
     # Now create an AuthToken and return it
     username = user_profile["id"]
-    auth_token = create_token(username, access_token, expiry_date, issuer="CAS+OAuth")
+    auth_token = get_or_create_token(username, access_token, expiry_date, issuer="CAS+OAuth")
     # Set the username to the user to be emulated
     # to whom the token also belongs
     request.session['username'] = username
@@ -158,7 +158,7 @@ def token_auth(request):
     # LDAP Authenticate if password provided.
     if username and password:
         if ldap_validate(username, password):
-            token = create_token(username, issuer='API')
+            token = get_or_create_token(username, issuer='API')
             expireTime = token.issuedTime + auth_settings.TOKEN_EXPIRY_TIME
             auth_json = {
                 'token': token.key,

@@ -1,14 +1,10 @@
-caslib.py==2.2.2
+caslib.py
+apache-libcloud
 oauth2client
 djangorestframework
 jwt.py
 python-ldap
-requests
+requests[security]
 threepio
-apache-libcloud==0.20.1
 python-keystoneclient
 keystoneauth1
-
-# For developers -- Uncomment
-# twine
-# wheel
