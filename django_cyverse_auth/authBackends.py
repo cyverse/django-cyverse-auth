@@ -346,16 +346,21 @@ class OpenstackLoginBackend(ModelBackend):
             username=username, password=password,
             user_domain_id=domain_name,
             project_name=project_name, project_domain_id=domain_name)
-        
-        ks_session=session.Session(auth=password_auth)
-        auth_token = ks_session.get_token()
-        expiry_time = password_auth.auth_ref.expires
+
         try:
+            ks_session = session.Session(auth=password_auth)
+            ks_session.get_token()
+        except:
+            logger.exception("Error: Keystone session did not produce a valid token")
+            return None
+
+        try:
+            expiry_time = password_auth.auth_ref.expires
             email = self._lookup_email(ks_session)
             token = self._keystone_auth_to_token(password_auth, username, project_name)
             return self._update_token(auth_url, username, token, email, expiry_time, request)
         except:
-            logger.exception("Error validating keystone auth by password")
+            logger.exception("Error parsing keystone auth by password")
             return None
 
     def keystone_validate_token(self, auth_url, username, token, project_name, project_domain, request):
