@@ -158,11 +158,14 @@ def get_or_create_token(user, token_key=None, token_expire=None, remote_ip=None,
     """
     token_expire = Token.update_expiration(token_expire)
     defaults = {
-        "issuer":issuer,
-        "expireTime":token_expire,
-        "remote_ip":remote_ip,
-        "api_server_url":auth_settings.API_SERVER_URL
+        "api_server_url": auth_settings.API_SERVER_URL
     }
+    if issuer:
+        defaults["issuer"] = issuer
+    if token_expire:
+        defaults["expireTime"] = token_expire
+    if remote_ip:
+        defaults["remote_ip"] = remote_ip
     auth_user_token, created = Token.objects.update_or_create(
         key=token_key, user=user, defaults=defaults)
     logger.info(
@@ -172,16 +175,15 @@ def get_or_create_token(user, token_key=None, token_expire=None, remote_ip=None,
     return auth_user_token
 
 
-def get_or_create_user(username=None, attributes={}):
+def get_or_create_user(username=None, attributes=None):
+    if not attributes:
+        attributes = {}
     User = get_user_model()
-    email = attributes.get('email', '%s@atmosphere.local' % username)
-    first_name = attributes.get('firstName')
-    last_name = attributes.get('lastName')
-    defaults = {
-        'email':email,
-        'first_name':first_name,
-        'last_name':last_name,
-    }
+    defaults = {}
+    if attributes.get('firstName'):
+        defaults['first_name'] = attributes.get('firstName')
+    if attributes.get('lastName'):
+        defaults['last_name'] = attributes.get('lastName')
     user, created =  User.objects.update_or_create(
         username=username,
         defaults=defaults)
@@ -231,7 +233,3 @@ def userCanEmulate(username):
         return user.is_staff
     except User.DoesNotExist:
         return False
-
-
-
-
