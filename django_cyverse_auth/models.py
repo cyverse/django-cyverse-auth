@@ -184,6 +184,8 @@ def get_or_create_user(username=None, attributes=None):
         defaults['first_name'] = attributes.get('firstName')
     if attributes.get('lastName'):
         defaults['last_name'] = attributes.get('lastName')
+    if attributes.get('email'):
+        defaults['email'] = attributes.get('email')
     user, created =  User.objects.update_or_create(
         username=username,
         defaults=defaults)
