@@ -1,23 +1,26 @@
----
-  # travis.yml for Django
-  sudo: required
-  dist: trusty
+# travis.yml for Django
+sudo: required
+dist: trusty
+deploy:
+  provider: pypi
+  user: atmosphere
+  password:
+    secure: fO3eH9Btm5STt2leHHt6OPMazZhRFhIrVGSSVmCupRls0XeUJMv54c9S9ZivFPz6UBHlZ87UXWXE5w+OM9LiQUFoQJ6ZCQTeDQSDNGlF3vagO846gIFKJrGp+O65NTC+PP8rW9uiGiWRch5cYWUEzYqqnjIA2W0PTS8ogOSEX9pbTjiL6/OA3TlVZ0Q5/7SDygy7Gx0xN0tpSQDhykYBrJHQ9tOPs0LQrLl+xcTG5zow4YWKjk4/HWkNmke59bm8YWC8Kh13EPXGtAyYeWboshs1wbq/IkX6gpJRrama/asmTvLwYyIIitBcsiT/HbhPhan4Lkso+ilNn8r6P3Ht8vG7PqVw7LSDTpJpIbGolf3S9nJD/25dAQ4EDCVkxz4J7JYDNFrqToSo2sfq4LadcpIRFNE3GbfF6d/1ofGyHZrFIluYR6fa3DqqTFmajUDpLXqHcAbYOxCTYb+SpPT4ZKTe013dGMUnMxV7QZ4lM5eUAA4sOBieC4YoWFleLed+hwISQm4ghQilzKUkI6hy9Pr1FvGhIQ8ml/aEin4eMXhJfmUUB0pPM7LpByPivNvikTq1t/WeJfl373dQxz+VUR6Q6jvXGs8woR2E8R5OFLiuuR78h10vK1o9R/URvBwPd1Y4AtX4F5uwubyMdv9kzLjlOwxcUT5+QVIE86RytiY=
+true:
+  tags: true
 
-  # Use an older version of trusty until quirks are figured out.
-  # https://blog.travis-ci.com/2017-06-21-trusty-updates-2017-Q2-launch
-  group: deprecated-2017Q2
+# Use an older version of trusty until quirks are figured out.
+# https://blog.travis-ci.com/2017-06-21-trusty-updates-2017-Q2-launch
+group: deprecated-2017Q2
 
-  cache: pip
-
-  language: python
-  python:
-    - 2.7
-
-  install:
-    - pip install -U pip setuptools pip-tools
-    - pip install -r dev_requirements.txt
-
-  script:
-    - echo "Hello world, I'll do something real useful.. Real soon!"
-    # - flake8 django_cyverse_auth/*
-    # - python demo/manage.py test --keepdb
+cache: pip
+language: python
+python:
+- 2.7
+install:
+- pip install -U pip setuptools pip-tools
+- pip install -r dev_requirements.txt
+script:
+- echo "Hello world, I'll do something real useful.. Real soon!"
+# - flake8 django_cyverse_auth/*
+# - python demo/manage.py test --keepdb
