@@ -357,7 +357,7 @@ class OpenstackLoginBackend(ModelBackend):
         try:
             expiry_time = password_auth.auth_ref.expires
             email = self._lookup_email(ks_session)
-            token = self._keystone_auth_to_token(password_auth, username, project_name)
+            _, token = self._keystone_auth_to_token(password_auth, username, project_name)
             return self._update_token(auth_url, username, token, email, expiry_time, request)
         except:
             logger.exception("Error parsing keystone auth by password")
