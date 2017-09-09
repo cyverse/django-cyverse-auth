@@ -337,7 +337,7 @@ def validate_token(token, request=None):
         if 'django_cyverse_auth.authBackends.MockLoginBackend' in all_backends:
             logger.info("IGNORED -- AuthToken Retrieved:%s Does not exist. -- Validate anyway (Mock enabled)" % (token,))
             mock_user, _ = User.objects.get_or_create(username=settings.ALWAYS_AUTH_USER)
-            auth_token = AuthToken.objects.create(key=token, user=mock_user)
+            auth_token = AuthToken.objects.get_or_create(key=token, user=mock_user)
             return True
         logger.info("AuthToken Retrieved:%s Does not exist." % (token,))
         return False
