@@ -3,29 +3,30 @@
 Token based authentication
 """
 from urlparse import urlparse
-from datetime import timedelta
 
 from django.conf import settings
 from django.contrib.auth import get_user_model
-from django.utils import timezone
+from django.contrib.auth.signals import user_logged_in
 from requests.exceptions import ConnectionError
 from rest_framework.authentication import BaseAuthentication
-import logging
-logger = logging.getLogger(__name__)
 from .settings import auth_settings
-from .exceptions import Unauthorized
-from .models import (Token as AuthToken,
-     get_or_create_user,
-     get_or_create_token)
-from .models import get_or_create_user
+from .models import (
+    Token as AuthToken,
+    get_or_create_user,
+    get_or_create_token
+)
 from .protocol.cas import cas_validateUser
 from .protocol.cas import cas_profile_for_token
-from .protocol.globus import globus_profile_for_token, create_user_token_from_globus_profile
+from .protocol.globus import (
+    globus_profile_for_token, create_user_token_from_globus_profile
+)
 from .protocol.wso2 import WSO2_JWT
 
-from libcloud.common.openstack_identity import OpenStackIdentity_3_0_Connection, OpenStackIdentityTokenScope
+import logging
+logger = logging.getLogger(__name__)
 
 User = get_user_model()
+
 
 def getRequestParams(request):
     """
@@ -113,7 +114,10 @@ class TokenAuthentication(BaseAuthentication):
         if validate_token(token_key):
             token = self.model.objects.get(key=token_key)
             if token.user.is_active:
-                return (token.user, token)
+                user = token.user
+                user_logged_in.send(
+                    sender=user.__class__, request=request, user=user)
+                return (user, token)
         return None
 
 
@@ -133,7 +137,10 @@ class JWTTokenAuthentication(TokenAuthentication):
             sp = WSO2_JWT(auth_settings.JWT_SP_PUBLIC_KEY_FILE)
             auth_token = sp.create_token_from_jwt(jwt_assertion)
             if auth_token.user.is_active:
-                return (auth_token.user, auth_token)
+                user = auth_token.user
+                user_logged_in.send(
+                    sender=user.__class__, request=request, user=user)
+                return (user, auth_token)
         return None
 
 
@@ -147,7 +154,6 @@ class GlobusOAuthTokenAuthentication(TokenAuthentication):
     """
 
     def authenticate(self, request):
-        all_backends = settings.AUTHENTICATION_BACKENDS
         auth = request.META.get('HTTP_AUTHORIZATION', '').split()
         if len(auth) == 2 and auth[0].lower() == "token":
             oauth_token = auth[1]
@@ -157,8 +163,12 @@ class GlobusOAuthTokenAuthentication(TokenAuthentication):
                 except self.model.DoesNotExist:
                     return None
                 if token and token.user.is_active:
-                    return (token.user, token)
+                    user = token.user
+                    user_logged_in.send(
+                        sender=user.__class__, request=request, user=user)
+                    return (user, token)
         return None
+
 def validate_globus_oauth_token(token, request=None):
     """
     Validates the token attached to the request (SessionStorage, GET/POST)
@@ -182,6 +192,7 @@ def validate_globus_oauth_token(token, request=None):
     if not auth_token:
         return False
     return True
+
 
 class OpenstackTokenAuthentication(TokenAuthentication):
 
@@ -215,11 +226,13 @@ class OpenstackTokenAuthentication(TokenAuthentication):
         try:
             from rtwo.drivers.common import _connect_to_openstack_sdk
         except ImportError:
-            logger.exception("Cannot use OpenstackTokenAuthentication without the rtwo library. Please `pip install rtwo` and try again!")
+            logger.exception(
+                "Cannot use OpenstackTokenAuthentication without `rtwo`."
+                " Please `pip install rtwo` and try again!")
             return None
 
         sdk_args = {
-            'auth_url': auth_url.replace('5000','35357'),
+            'auth_url': auth_url.replace('5000', '35357'),
             'ex_force_base_url': auth_url.replace(":5000/v3", ":8774/v2/"),
             'identity_api_version': 3,
             'project_domain_name': domain_name,
@@ -239,9 +252,12 @@ class OpenstackTokenAuthentication(TokenAuthentication):
                 'lastName': "",
                 'email': "%s@%s" % (username, hostname),
             }
-            logger.debug("Profile attrs %s converted to %s" % (profile_attrs, new_profile))
+            logger.debug("Openstack Profile: %s", new_profile)
             user = get_or_create_user(new_profile['username'], new_profile)
-            auth_token = get_or_create_token(user, token_key, issuer="OpenstackTokenAuthentication")
+            auth_token = get_or_create_token(
+                user, token_key, issuer="OpenstackTokenAuthentication")
+            user_logged_in.send(
+                sender=user.__class__, request=request, user=user)
             return auth_token
         except:
             return None
@@ -273,6 +289,8 @@ class OAuthTokenAuthentication(TokenAuthentication):
             oauth_token = auth[1]
             if 'django_cyverse_auth.authBackends.MockLoginBackend' in all_backends:
                 user, token = self._mock_oauth_login(oauth_token)
+                user_logged_in.send(
+                    sender=user.__class__, request=request, user=user)
                 return (user, token)
             if validate_oauth_token(oauth_token):
                 try:
@@ -280,7 +298,10 @@ class OAuthTokenAuthentication(TokenAuthentication):
                 except self.model.DoesNotExist:
                     return None
                 if token and token.user.is_active:
-                    return (token.user, token)
+                    user = token.user
+                    user_logged_in.send(
+                        sender=user.__class__, request=request, user=user)
+                    return (user, token)
         return None
 
 
@@ -301,10 +322,16 @@ def validate_oauth_token(token, request=None):
     username = user_profile.get("id")
     if not username:
         logger.warn("Invalid Profile:%s does not have username/attributes"
-                   % user_profile)
+                    % user_profile)
         return False
-    #CAS specific, converts [{u'lastName': u'Doe'}, {u'firstName': u'John'}] to {u'lastName': u'doe', u'firstName': u'John'}
-    profile_attrs = { c.keys()[0]: c.values()[0] for c in user_profile.get('attributes', []) }
+
+    # CAS specific:
+    # converts [{u'lastName': u'Doe'}, {u'firstName': u'John'}]
+    # to {u'lastName': u'doe', u'firstName': u'John'}
+    profile_attrs = {
+        c.keys()[0]: c.values()[0]
+        for c in user_profile.get('attributes', [])
+    }
     username = username.lower()
     new_profile = {
         'username': username,
@@ -313,9 +340,9 @@ def validate_oauth_token(token, request=None):
         'email': profile_attrs['email']
     }
     user = get_or_create_user(new_profile['username'], new_profile)
-    auth_token = get_or_create_token(user, token, issuer="OAuthTokenAuthentication")
+    auth_token = get_or_create_token(
+        user, token, issuer="OAuthTokenAuthentication")
     return auth_token
-
 
 
 def validate_token(token, request=None):
@@ -335,9 +362,12 @@ def validate_token(token, request=None):
     except AuthToken.DoesNotExist:
         all_backends = settings.AUTHENTICATION_BACKENDS
         if 'django_cyverse_auth.authBackends.MockLoginBackend' in all_backends:
-            logger.info("IGNORED -- AuthToken Retrieved:%s Does not exist. -- Validate anyway (Mock enabled)" % (token,))
-            mock_user, _ = User.objects.get_or_create(username=settings.ALWAYS_AUTH_USER)
-            auth_token = AuthToken.objects.get_or_create(key=token, user=mock_user)
+            logger.info(
+                "IGNORED -- AuthToken Retrieved:%s Does not exist. "
+                "-- Validate anyway (Mock enabled)" % (token,))
+            mock_user, _ = User.objects.get_or_create(
+                username=settings.ALWAYS_AUTH_USER)
+            auth_token, _ = AuthToken.objects.get_or_create(key=token, user=mock_user)
             return True
         logger.info("AuthToken Retrieved:%s Does not exist." % (token,))
         return False
