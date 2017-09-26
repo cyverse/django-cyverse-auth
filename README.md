@@ -13,3 +13,4 @@ Protocols currently supported:
 - [x] CAS OAuth
 - [x] LDAP
 - [x] Mock (Override auth, always True)
+- [x] OpenStack Keystone
