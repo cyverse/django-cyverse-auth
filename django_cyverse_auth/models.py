@@ -168,6 +168,7 @@ def get_or_create_token(user, token_key=None, token_expire=None, remote_ip=None,
         defaults["remote_ip"] = remote_ip
     auth_user_token, created = Token.objects.update_or_create(
         key=token_key, user=user, defaults=defaults)
+    token_key = auth_user_token.key
     logger.info(
         "%s token - %s" ,
         "Created" if created else "Retrieved",
