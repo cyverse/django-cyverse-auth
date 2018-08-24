@@ -6,7 +6,6 @@ from urlparse import urlparse
 
 from django.conf import settings
 from django.contrib.auth import get_user_model
-from django.contrib.auth.signals import user_logged_in
 from requests.exceptions import ConnectionError
 from rest_framework.authentication import BaseAuthentication
 from .settings import auth_settings
@@ -114,10 +113,7 @@ class TokenAuthentication(BaseAuthentication):
         if validate_token(token_key):
             token = self.model.objects.get(key=token_key)
             if token.user.is_active:
-                user = token.user
-                user_logged_in.send(
-                    sender=user.__class__, request=request, user=user)
-                return (user, token)
+                return (token.user, token)
         return None
 
 
@@ -137,10 +133,7 @@ class JWTTokenAuthentication(TokenAuthentication):
             sp = WSO2_JWT(auth_settings.JWT_SP_PUBLIC_KEY_FILE)
             auth_token = sp.create_token_from_jwt(jwt_assertion)
             if auth_token.user.is_active:
-                user = auth_token.user
-                user_logged_in.send(
-                    sender=user.__class__, request=request, user=user)
-                return (user, auth_token)
+                return (auth_token.user, auth_token)
         return None
 
 
@@ -163,10 +156,7 @@ class GlobusOAuthTokenAuthentication(TokenAuthentication):
                 except self.model.DoesNotExist:
                     return None
                 if token and token.user.is_active:
-                    user = token.user
-                    user_logged_in.send(
-                        sender=user.__class__, request=request, user=user)
-                    return (user, token)
+                    return (token.user, token)
         return None
 
 def validate_globus_oauth_token(token, request=None):
@@ -256,8 +246,6 @@ class OpenstackTokenAuthentication(TokenAuthentication):
             user = get_or_create_user(new_profile['username'], new_profile)
             auth_token = get_or_create_token(
                 user, token_key, issuer="OpenstackTokenAuthentication")
-            user_logged_in.send(
-                sender=user.__class__, request=request, user=user)
             return auth_token
         except:
             return None
