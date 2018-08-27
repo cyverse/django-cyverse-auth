@@ -25,3 +25,5 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 -->
 
 ## [Unreleased](https://github.com/cyverse/rtwo/compare/1.1.4...HEAD) - YYYY-MM-DD
+### Fixed
+  - Fix unnecessary session and token creation ([#20](https://github.com/cyverse/django-cyverse-auth/pull/20))
