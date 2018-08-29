@@ -333,15 +333,7 @@ def validate_oauth_token(token, request=None):
     return auth_token
 
 
-def validate_token(token, request=None):
-    """
-    Validates the token attached to the request (SessionStorage, GET/POST)
-    If token has expired,
-    CAS will attempt to reauthenticate the user and refresh token.
-    Expired Tokens can be used for GET requests ONLY!
-    """
-
-    # Existence test
+def validate_token(token):
     if not token:
         return False
     try:
