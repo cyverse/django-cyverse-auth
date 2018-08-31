@@ -24,7 +24,8 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
   - <in case of vulnerabilities>
 -->
 
-## [Unreleased](https://github.com/cyverse/rtwo/compare/1.1.4...HEAD) - YYYY-MM-DD
+## [Unreleased](https://github.com/cyverse/django-cyverse-auth/compare/1.1.5...HEAD) - YYYY-MM-DD
+## [1.1.5](https://github.com/cyverse/django-cyverse-auth/compare/1.1.4...1.1.5) - 2018-08-31
 ### Fixed
   - Fix unnecessary session and token creation
     ([#20](https://github.com/cyverse/django-cyverse-auth/pull/20))
