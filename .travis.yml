@@ -1,31 +1,19 @@
-# travis.yml for Django
 sudo: required
 dist: trusty
-
-# Use an older version of trusty until quirks are figured out.
-# https://blog.travis-ci.com/2017-06-21-trusty-updates-2017-Q2-launch
-group: deprecated-2017Q2
-
 cache: pip
 language: python
 python:
 - 2.7
-
 install:
 - pip install -U pip setuptools pip-tools
 - pip install -r dev_requirements.txt
-
 script:
 - echo "Hello world, I'll do something real useful.. Real soon!"
-# - flake8 django_cyverse_auth/*
-# - python demo/manage.py test --keepdb
-
 deploy:
   provider: pypi
   user: atmosphere
-  distributions: "sdist bdist_wheel"
+  distributions: sdist bdist_wheel
   password:
-    secure: fO3eH9Btm5STt2leHHt6OPMazZhRFhIrVGSSVmCupRls0XeUJMv54c9S9ZivFPz6UBHlZ87UXWXE5w+OM9LiQUFoQJ6ZCQTeDQSDNGlF3vagO846gIFKJrGp+O65NTC+PP8rW9uiGiWRch5cYWUEzYqqnjIA2W0PTS8ogOSEX9pbTjiL6/OA3TlVZ0Q5/7SDygy7Gx0xN0tpSQDhykYBrJHQ9tOPs0LQrLl+xcTG5zow4YWKjk4/HWkNmke59bm8YWC8Kh13EPXGtAyYeWboshs1wbq/IkX6gpJRrama/asmTvLwYyIIitBcsiT/HbhPhan4Lkso+ilNn8r6P3Ht8vG7PqVw7LSDTpJpIbGolf3S9nJD/25dAQ4EDCVkxz4J7JYDNFrqToSo2sfq4LadcpIRFNE3GbfF6d/1ofGyHZrFIluYR6fa3DqqTFmajUDpLXqHcAbYOxCTYb+SpPT4ZKTe013dGMUnMxV7QZ4lM5eUAA4sOBieC4YoWFleLed+hwISQm4ghQilzKUkI6hy9Pr1FvGhIQ8ml/aEin4eMXhJfmUUB0pPM7LpByPivNvikTq1t/WeJfl373dQxz+VUR6Q6jvXGs8woR2E8R5OFLiuuR78h10vK1o9R/URvBwPd1Y4AtX4F5uwubyMdv9kzLjlOwxcUT5+QVIE86RytiY=
+    secure: UYCYQ6gGCTp88vC5xmqVoQbYTiUQ0AxNF9FNF3ttQj10tQqEUuv9cOVr1OKNioQewkxQtLV0h6UGvjIulXIywaVTNoBknuIZc25pQkezgZYepm1y8QfTKTvbBDM1rKGGGJzaDfI2Kk4R8xdONW+KbacJSNv8G/SLPqryFLz1Z0qcJtc48/MjtEzFWShzg5k0YSBn140k+wa9NCcfbpb7mLF6Eja7v5mPSOra0OUAz6rusW9yTXF+ZE8BGAOmOaVbki3AOa1zs2gKiV07JpwqgAwthNIPNFIKsQWqpx2xUPj1IaY3EnECB05eKKWuYYDBGZTJWCG7jvXmrZG2ddIk5K1+bDmkY5IIURZbyEV/2EpysNhDa9gy2nfm1G8jNiBK3dGR28cf5Yiw8qCZkkJzkXqf9P3Gbxpm05DyF5G30J0Vypopf1Lev8jVkuRuDpE/wctjZTZuNZ+5f6v1FHwq6ikJ/LijRu4WD2jcSRCLyBkxiLVNRH5apJdglFxl9UQQ5Hw+KNB1rsmR3dXd1LDjyz6cT4HdHwRMqOPINaHomsUQu7pu2qEI7dGH9e0+K05iq0FsxGogVsoCr30vXOMXWymzmsU9EVS3T2XlO9PO+Phz3ASbloe07/9rs6OgzsPf5xjjbwiCURsRJsnmMq7Y0Zp4jzaelymXTnJSjzJWnag=
   on:
     tags: true
-
