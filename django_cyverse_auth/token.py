@@ -333,15 +333,7 @@ def validate_oauth_token(token, request=None):
     return auth_token
 
 
-def validate_token(token, request=None):
-    """
-    Validates the token attached to the request (SessionStorage, GET/POST)
-    If token has expired,
-    CAS will attempt to reauthenticate the user and refresh token.
-    Expired Tokens can be used for GET requests ONLY!
-    """
-
-    # Existence test
+def validate_token(token):
     if not token:
         return False
     try:
@@ -360,22 +352,9 @@ def validate_token(token, request=None):
         logger.info("AuthToken Retrieved:%s Does not exist." % (token,))
         return False
     if auth_token.is_expired():
-        if request and request.META['REQUEST_METHOD'] != 'GET':
-            # See if the user (Or the user who is emulating a user) can be
-            # re-authed.
-            user_to_auth = request.session.get('emulated_by', user)
-            if cas_validateUser(user_to_auth):
-                auth_token.expireTime = AuthToken.update_expiration()
-                auth_token.save()
-                return True
-            else:
-                logger.info("Token %s expired, User %s "
-                            "could not be reauthenticated in CAS"
-                            % (token, user))
-                return False
-        else:
-            logger.debug("Token %s EXPIRED, but allowing User %s to GET data.."
-                         % (token, user))
-            return True
+	logger.info("Token %s expired, User %s "
+		    "could not be reauthenticated in CAS"
+		    % (token, user))
+	return False
     else:
         return True
