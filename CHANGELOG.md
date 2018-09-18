@@ -25,6 +25,10 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 -->
 
 ## [Unreleased](https://github.com/cyverse/django-cyverse-auth/compare/1.1.6...HEAD) - YYYY-MM-DD
+### Fixed
+  - Remove undefined reference to 'user_logged_in'
+    ([#30](https://github.com/cyverse/django-cyverse-auth/pull/30))
+
 ## [1.1.6](https://github.com/cyverse/django-cyverse-auth/compare/1.1.5...1.1.6) - 2018-08-31
 ### Fixed
   - Travis automatically pushes new pypi release when tags are pushed

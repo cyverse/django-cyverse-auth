@@ -277,8 +277,6 @@ class OAuthTokenAuthentication(TokenAuthentication):
             oauth_token = auth[1]
             if 'django_cyverse_auth.authBackends.MockLoginBackend' in all_backends:
                 user, token = self._mock_oauth_login(oauth_token)
-                user_logged_in.send(
-                    sender=user.__class__, request=request, user=user)
                 return (user, token)
             if validate_oauth_token(oauth_token):
                 try:
@@ -286,10 +284,7 @@ class OAuthTokenAuthentication(TokenAuthentication):
                 except self.model.DoesNotExist:
                     return None
                 if token and token.user.is_active:
-                    user = token.user
-                    user_logged_in.send(
-                        sender=user.__class__, request=request, user=user)
-                    return (user, token)
+                    return (token.user, token)
         return None
 
 
