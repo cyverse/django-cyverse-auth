@@ -24,7 +24,8 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
   - <in case of vulnerabilities>
 -->
 
-## [Unreleased](https://github.com/cyverse/django-cyverse-auth/compare/1.1.6...HEAD) - YYYY-MM-DD
+## [Unreleased](https://github.com/cyverse/django-cyverse-auth/compare/1.1.7...HEAD) - YYYY-MM-DD
+## [1.1.7](https://github.com/cyverse/django-cyverse-auth/compare/1.1.6...1.1.7) - 2018-09-18
 ### Fixed
   - Remove undefined reference to 'user_logged_in'
     ([#30](https://github.com/cyverse/django-cyverse-auth/pull/30))
