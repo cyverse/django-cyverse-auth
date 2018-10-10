@@ -25,6 +25,10 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 -->
 
 ## [Unreleased](https://github.com/cyverse/django-cyverse-auth/compare/1.1.7...HEAD) - YYYY-MM-DD
+### Added
+  - Added support for CAS 5
+    ([#32](https://github.com/cyverse/django-cyverse-auth/pull/32))
+
 ## [1.1.7](https://github.com/cyverse/django-cyverse-auth/compare/1.1.6...1.1.7) - 2018-09-18
 ### Fixed
   - Remove undefined reference to 'user_logged_in'
