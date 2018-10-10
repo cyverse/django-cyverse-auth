@@ -114,7 +114,7 @@ def cas_callback_authorize(request):
         return o_login_redirect(request)
     # Exchange token for profile
     user_profile = oauth_client.get_profile(access_token)
-    if not user_profile or "id" not in user_profile:
+    if not user_profile or "username" not in user_profile:
         logger.error("AccessToken is producing an INVALID profile!"
                      " Check the CAS server and caslib.py for more"
                      " information.")
@@ -122,7 +122,7 @@ def cas_callback_authorize(request):
         return login(request)
     # ASSERT: A valid OAuth token gave us the Users Profile.
     # Now create an AuthToken and return it
-    username = user_profile["id"]
+    username = user_profile["username"]
     auth_token = get_or_create_token(username, access_token, expiry_date, issuer="CAS+OAuth")
     # Set the username to the user to be emulated
     # to whom the token also belongs

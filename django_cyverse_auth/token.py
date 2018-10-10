@@ -302,25 +302,18 @@ def validate_oauth_token(token, request=None):
 
     if not user_profile:
         return False
-    username = user_profile.get("id")
+    username = user_profile.get("username")
     if not username:
         logger.warn("Invalid Profile:%s does not have username/attributes"
                     % user_profile)
         return False
 
-    # CAS specific:
-    # converts [{u'lastName': u'Doe'}, {u'firstName': u'John'}]
-    # to {u'lastName': u'doe', u'firstName': u'John'}
-    profile_attrs = {
-        c.keys()[0]: c.values()[0]
-        for c in user_profile.get('attributes', [])
-    }
     username = username.lower()
     new_profile = {
         'username': username,
-        'firstName': profile_attrs['firstName'],
-        'lastName': profile_attrs['lastName'],
-        'email': profile_attrs['email']
+        'firstName': user_profile['firstName'],
+        'lastName': user_profile['lastName'],
+        'email': user_profile['email']
     }
     user = get_or_create_user(new_profile['username'], new_profile)
     auth_token = get_or_create_token(
