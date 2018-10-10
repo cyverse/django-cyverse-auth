@@ -24,7 +24,8 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
   - <in case of vulnerabilities>
 -->
 
-## [Unreleased](https://github.com/cyverse/django-cyverse-auth/compare/1.1.7...HEAD) - YYYY-MM-DD
+## [Unreleased](https://github.com/cyverse/django-cyverse-auth/compare/1.2.0...HEAD) - YYYY-MM-DD
+## [1.2.0](https://github.com/cyverse/django-cyverse-auth/compare/1.1.7...1.2.0) - 2018-10-10
 ### Added
   - Added support for CAS 5
     ([#32](https://github.com/cyverse/django-cyverse-auth/pull/32))
