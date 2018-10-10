@@ -321,5 +321,5 @@ def cas_profile_contains(attrs, test_value):
 
 def cas_profile_for_token(access_token):
     oauth_client = get_cas_oauth_client()
-    profile_map = oauth_client.get_profile(access_token)
-    return profile_map
+    profile = oauth_client.get_profile(access_token)
+    return profile

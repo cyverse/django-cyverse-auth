@@ -1,4 +1,4 @@
-caslib.py
+caslib.py >= 2.3.0
 apache-libcloud
 oauth2client
 djangorestframework
